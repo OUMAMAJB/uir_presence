@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Créer une Session - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4 max-w-2xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('track.view_subject_sessions', subject_id=subject.id) }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour aux Sessions
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">Créer une Session</h1>
+            <p class="text-gray-600">{{ subject.name }}</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Formulaire -->
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form method="POST" action="{{ url_for('track.create_session', subject_id=subject.id) }}">
+                <!-- Type de Session -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-3">Type de Session *</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="type" value="CM" class="peer sr-only" required>
+                            <div
+                                class="border-2 border-gray-300 rounded-lg p-4 text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-blue-300 transition-all duration-150">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                <p class="font-semibold text-gray-700">CM</p>
+                                <p class="text-xs text-gray-500">Cours Magistral</p>
+                            </div>
+                        </label>
+
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="type" value="TD" class="peer sr-only">
+                            <div
+                                class="border-2 border-gray-300 rounded-lg p-4 text-center peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all duration-150">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-green-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p class="font-semibold text-gray-700">TD</p>
+                                <p class="text-xs text-gray-500">Travaux Dirigés</p>
+                            </div>
+                        </label>
+
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="type" value="TP" class="peer sr-only">
+                            <div
+                                class="border-2 border-gray-300 rounded-lg p-4 text-center peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-all duration-150">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-purple-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <p class="font-semibold text-gray-700">TP</p>
+                                <p class="text-xs text-gray-500">Travaux Pratiques</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Date -->
+                <div class="mb-6">
+                    <label for="date" class="block text-gray-700 font-semibold mb-2">Date *</label>
+                    <input type="date" id="date" name="date" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+
+                <!-- Horaires -->
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="start_time" class="block text-gray-700 font-semibold mb-2">Heure de début *</label>
+                        <input type="time" id="start_time" name="start_time" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label for="end_time" class="block text-gray-700 font-semibold mb-2">Heure de fin *</label>
+                        <input type="time" id="end_time" name="end_time" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                </div>
+
+                <!-- Note d'information -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-3" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <p class="text-blue-800 font-semibold mb-1">Information</p>
+                            <p class="text-blue-700 text-sm">
+                                Une fois la session créée, vous pourrez la démarrer pour générer le QR code de présence.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex items-center justify-between">
+                    <a href="{{ url_for('track.view_subject_sessions', subject_id=subject.id) }}"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-150 font-semibold">
+                        Annuler
+                    </a>
+                    <button type="submit"
+                        class="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                        Créer la Session
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Définir la date minimale à aujourd'hui
+    document.getElementById('date').min = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

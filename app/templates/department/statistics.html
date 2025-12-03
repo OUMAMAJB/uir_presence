@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block title %}Statistiques Département - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('department.dashboard') }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour au Dashboard
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">Statistiques du Département</h1>
+            <p class="text-gray-600">Analysez l'assiduité et identifiez les étudiants en difficulté</p>
+        </div>
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-primary mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Filtres d'Analyse
+            </h2>
+
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Année Académique -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Année</label>
+                    <select name="academic_year"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Toutes les années</option>
+                        <option value="1" {% if stats.selected_academic_year==1 %}selected{% endif %}>1ère année
+                        </option>
+                        <option value="2" {% if stats.selected_academic_year==2 %}selected{% endif %}>2ème année
+                        </option>
+                        <option value="3" {% if stats.selected_academic_year==3 %}selected{% endif %}>3ème année
+                        </option>
+                        <option value="4" {% if stats.selected_academic_year==4 %}selected{% endif %}>4ème année
+                        </option>
+                        <option value="5" {% if stats.selected_academic_year==5 %}selected{% endif %}>5ème année
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Semestre -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Semestre</label>
+                    <select name="semester_id"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Tous les semestres</option>
+                        {% for semester in stats.semesters %}
+                        <option value="{{ semester.id }}" {% if stats.selected_semester_id==semester.id %}selected{%
+                            endif %}>
+                            {{ semester.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Filière -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Filière</label>
+                    <select name="track_id"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Toutes les filières</option>
+                        {% for track in stats.tracks %}
+                        <option value="{{ track.id }}" {% if stats.selected_track_id==track.id %}selected{% endif %}>
+                            {{ track.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Matière -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Matière</label>
+                    <select name="subject_id"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Toutes les matières</option>
+                        {% for subject in stats.subjects %}
+                        <option value="{{ subject.id }}" {% if stats.selected_subject_id==subject.id %}selected{% endif
+                            %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Bouton Filtrer -->
+                <div class="md:col-span-4 flex justify-end mt-2">
+                    <button type="submit"
+                        class="px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold text-sm">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Analyser
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Cartes Résumé -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Taux de Présence Global</p>
+                        <p class="text-3xl font-bold text-gray-800">85%</p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-full">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-green-600 mt-2 flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    +2.5% vs mois dernier
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Étudiants en Rattrapage</p>
+                        <p class="text-3xl font-bold text-gray-800">12</p>
+                    </div>
+                    <div class="p-3 bg-red-100 rounded-full">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-red-600 mt-2 font-medium">Action requise</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Séances Réalisées</p>
+                        <p class="text-3xl font-bold text-gray-800">145</p>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-full">
+                        <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">CM: 60 | TD: 50 | TP: 35</p>
+            </div>
+        </div>
+
+        <!-- Tableau Détaillé -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">Détails par Étudiant</h3>
+                <button class="text-sm text-primary hover:text-secondary font-semibold">
+                    Exporter Excel
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Étudiant
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Filière
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Taux d'Absence
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Absences CM+TD
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Absences TP
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Statut
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Exemple de données (à remplacer par boucle dynamique) -->
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                                        JD
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">Jean Dupont</div>
+                                        <div class="text-sm text-gray-500">jean.dupont@uir.ac.ma</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                Génie Informatique
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-semibold text-gray-900 mr-2">15%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 15%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                3 séances
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                0 séances
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Normal
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-secondary">Détails</a>
+                            </td>
+                        </tr>
+
+                        <tr class="hover:bg-gray-50 bg-red-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 rounded-full bg-red-200 flex items-center justify-center text-red-600 font-bold">
+                                        MM
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">Marie Martin</div>
+                                        <div class="text-sm text-gray-500">marie.martin@uir.ac.ma</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                Génie Informatique
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <span class="text-sm font-semibold text-red-600 mr-2">35%</span>
+                                    <div class="w-16 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-red-500 h-2 rounded-full" style="width: 35%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                8 séances
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                1 séance
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 animate-pulse">
+                                    Rattrapage
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-secondary">Détails</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

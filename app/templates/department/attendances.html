@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Consultation des Présences - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('department.dashboard') }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour au Dashboard
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">Consultation des Présences</h1>
+            <p class="text-gray-600">Visualisez l'historique des présences par filière, matière et étudiant</p>
+        </div>
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-primary mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filtres
+            </h2>
+
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Filière -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Filière</label>
+                    <select name="track_id"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Toutes les filières</option>
+                        {% for track in tracks %}
+                        <option value="{{ track.id }}" {% if filters.track_id==track.id %}selected{% endif %}>
+                            {{ track.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Année -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Année</label>
+                    <select name="academic_year"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Toutes les années</option>
+                        <option value="1" {% if filters.academic_year==1 %}selected{% endif %}>1ère année</option>
+                        <option value="2" {% if filters.academic_year==2 %}selected{% endif %}>2ème année</option>
+                        <option value="3" {% if filters.academic_year==3 %}selected{% endif %}>3ème année</option>
+                        <option value="4" {% if filters.academic_year==4 %}selected{% endif %}>4ème année</option>
+                        <option value="5" {% if filters.academic_year==5 %}selected{% endif %}>5ème année</option>
+                    </select>
+                </div>
+
+                <!-- Semestre -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Semestre</label>
+                    <select name="semester_id"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Tous les semestres</option>
+                        {% for semester in semesters %}
+                        <option value="{{ semester.id }}" {% if filters.semester_id==semester.id %}selected{% endif %}>
+                            {{ semester.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Matière -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Matière</label>
+                    <select name="subject_id"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Toutes les matières</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if filters.subject_id==subject.id %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Type de cours</label>
+                    <select name="type"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                        <option value="">Tous les types</option>
+                        <option value="CM" {% if filters.type=='CM' %}selected{% endif %}>CM</option>
+                        <option value="TD" {% if filters.type=='TD' %}selected{% endif %}>TD</option>
+                        <option value="TP" {% if filters.type=='TP' %}selected{% endif %}>TP</option>
+                    </select>
+                </div>
+
+                <!-- Date -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+                    <input type="date" name="date" value="{{ filters.date or '' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                </div>
+
+                <!-- Bouton Filtrer -->
+                <div class="md:col-span-3 lg:col-span-4 flex justify-end mt-2">
+                    <a href="{{ url_for('department.view_attendances') }}"
+                        class="mr-4 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-150 text-sm font-semibold flex items-center">
+                        Réinitialiser
+                    </a>
+                    <button type="submit"
+                        class="px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold text-sm">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Appliquer les filtres
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tableau des Présences -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Étudiant
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Matière / Type
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date / Heure
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Statut
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Scan
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% if attendances %}
+                        {% for attendance in attendances %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div
+                                        class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                                        {{ attendance.student.first_name[0] }}{{ attendance.student.last_name[0] }}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ attendance.student.first_name }} {{ attendance.student.last_name }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ attendance.student.email }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 font-semibold">{{ attendance.session.subject.name }}
+                                </div>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if attendance.session.type == 'CM' %}bg-blue-100 text-blue-800
+                                        {% elif attendance.session.type == 'TD' %}bg-green-100 text-green-800
+                                        {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                    {{ attendance.session.type }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ attendance.session.date.strftime('%d/%m/%Y') }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ attendance.session.start_time.strftime('%H:%M') }} - {{
+                                    attendance.session.end_time.strftime('%H:%M') }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if attendance.status == 'present' %}
+                                <span
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Présent
+                                </span>
+                                {% elif attendance.status == 'absent' %}
+                                <span
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                    Absent
+                                </span>
+                                {% else %}
+                                <span
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    {{ attendance.status }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if attendance.timestamp %}
+                                {{ attendance.timestamp.strftime('%H:%M:%S') }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center">
+                                <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                <p class="text-gray-500 font-medium">Aucune présence trouvée pour ces critères.</p>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination (Placeholder) -->
+            {% if attendances and attendances|length > 20 %}
+            <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <a href="#"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Précédent
+                        </a>
+                        <a href="#"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Suivant
+                        </a>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Affichage de <span class="font-medium">1</span> à <span class="font-medium">{{
+                                    attendances|length }}</span> résultats
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                                aria-label="Pagination">
+                                <a href="#"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Précédent</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                        fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd"
+                                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                                <a href="#" aria-current="page"
+                                    class="z-10 bg-primary border-primary text-white relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    1
+                                </a>
+                                <a href="#"
+                                    class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    2
+                                </a>
+                                <a href="#"
+                                    class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    3
+                                </a>
+                                <a href="#"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Suivant</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                        fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd"
+                                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

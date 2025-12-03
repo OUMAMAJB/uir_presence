@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier Filière - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4 max-w-2xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('department.dashboard') }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour au Dashboard
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">Modifier la Filière</h1>
+            <p class="text-gray-600">{{ track.name }}</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Formulaire -->
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form method="POST" action="{{ url_for('department.edit_track', track_id=track.id) }}">
+                <!-- Nom de la Filière -->
+                <div class="mb-6">
+                    <label for="name" class="block text-gray-700 font-semibold mb-2">Nom de la Filière *</label>
+                    <input type="text" id="name" name="name" value="{{ track.name }}" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex items-center justify-between mt-8">
+                    <a href="{{ url_for('department.dashboard') }}"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-150 font-semibold">
+                        Annuler
+                    </a>
+                    <button type="submit"
+                        class="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                        Enregistrer les Modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

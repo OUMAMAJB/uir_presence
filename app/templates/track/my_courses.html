@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Cours - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('track.dashboard') }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour au Dashboard
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">Mes Cours</h1>
+            <p class="text-gray-600">Gérez vos matières et sessions de cours</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold text-primary mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filtres
+            </h2>
+
+            <form method="GET" action="{{ url_for('track.my_courses') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Filière -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Filière</label>
+                    <select name="track_id"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="">Toutes les filières</option>
+                        {% for t in tracks %}
+                        <option value="{{ t.id }}" {% if selected_track_id==t.id %}selected{% endif %}>
+                            {{ t.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Année -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Année</label>
+                    <select name="academic_year"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="">Toutes les années</option>
+                        <option value="1" {% if selected_academic_year==1 %}selected{% endif %}>1ère année</option>
+                        <option value="2" {% if selected_academic_year==2 %}selected{% endif %}>2ème année</option>
+                        <option value="3" {% if selected_academic_year==3 %}selected{% endif %}>3ème année</option>
+                        <option value="4" {% if selected_academic_year==4 %}selected{% endif %}>4ème année</option>
+                        <option value="5" {% if selected_academic_year==5 %}selected{% endif %}>5ème année</option>
+                    </select>
+                </div>
+
+                <!-- Semestre -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Semestre</label>
+                    <select name="semester_id"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="">Tous les semestres</option>
+                        {% for semester in semesters %}
+                        <option value="{{ semester.id }}" {% if selected_semester_id==semester.id %}selected{% endif %}>
+                            {{ semester.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Bouton Filtrer -->
+                <div class="md:col-span-3 flex justify-end items-end">
+                    <button type="submit"
+                        class="px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Filtrer
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Liste des Matières -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if subjects %}
+            {% for subject in subjects %}
+            <div
+                class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                <!-- Header de la carte -->
+                <div class="bg-gradient-to-r from-primary to-secondary p-6">
+                    <h3 class="text-xl font-bold text-white mb-2">{{ subject.name }}</h3>
+                    <p class="text-gray-100 text-sm">{{ subject.track.name }}</p>
+                </div>
+
+                <!-- Contenu de la carte -->
+                <div class="p-6">
+                    <!-- Informations -->
+                    <div class="space-y-2 mb-6">
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-5 h-5 mr-2 text-primary" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="text-sm">{{ subject.semester.name if subject.semester else 'N/A' }}</span>
+                        </div>
+
+                        <!-- Séances -->
+                        <div class="grid grid-cols-3 gap-2 mt-4">
+                            <div class="bg-blue-50 rounded-lg p-2 text-center">
+                                <p class="text-xs text-gray-600">CM</p>
+                                <p class="text-lg font-bold text-blue-600">{{ subject.total_sessions_cm }}</p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-2 text-center">
+                                <p class="text-xs text-gray-600">TD</p>
+                                <p class="text-lg font-bold text-green-600">{{ subject.total_sessions_td }}</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-2 text-center">
+                                <p class="text-xs text-gray-600">TP</p>
+                                <p class="text-lg font-bold text-purple-600">{{ subject.total_sessions_tp }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bouton -->
+                    <a href="{{ url_for('track.view_subject_sessions', subject_id=subject.id) }}"
+                        class="block w-full text-center px-4 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                        Voir les sessions
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <!-- Aucune matière -->
+            <div class="md:col-span-3 bg-white rounded-xl shadow-lg p-12 text-center">
+                <svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <h3 class="text-2xl font-bold text-gray-400 mb-2">Aucun cours assigné</h3>
+                <p class="text-gray-500">Vous n'avez pas encore été affecté à des matières en tant qu'enseignant.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

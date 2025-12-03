@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Matières - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-secondary to-accent shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="{{ url_for('track.dashboard') }}"
+                    class="text-2xl font-bold text-white hover:text-light transition-colors duration-200">← Retour</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-primary mb-2">Gestion des Matières</h2>
+                <p class="text-gray-600">{% if track %}{{ track.name }} - {{ subjects|length }} matière(s){% else
+                    %}Filière{% endif %}</p>
+            </div>
+            {% if track %}
+            <a href="{{ url_for('track.create_subject', track_id=track.id) }}"
+                class="bg-gradient-to-r from-accent to-highlight hover:from-highlight hover:to-accent text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 font-semibold shadow-lg">
+                + Créer Matière
+            </a>
+            {% endif %}
+        </div>
+
+        {% if track %}
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+            <div class="bg-gradient-to-r from-secondary to-accent px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Filtrer les Matières</h3>
+                <span class="bg-white text-secondary px-3 py-1 rounded-full text-sm font-semibold">
+                    {{ subjects|length }} résultat(s)
+                </span>
+            </div>
+            <div class="p-6">
+                <form method="GET" class="flex space-x-4">
+                    <input type="hidden" name="track_id" value="{{ track.id }}">
+
+                    <!-- Filter by Semester -->
+                    <div class="flex-1">
+                        <select name="semester_id"
+                            class="block w-full px-4 py-2 border-gray-300 rounded-lg focus:ring-accent focus:border-accent">
+                            <option value="">Tous les semestres</option>
+                            {% for semester in semesters %}
+                            <option value="{{ semester.id }}" {% if selected_semester_id==semester.id %}selected{% endif
+                                %}>
+                                {{ semester.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Actions -->
+                    <button type="submit"
+                        class="bg-accent hover:bg-highlight text-white px-6 py-2 rounded-lg transition">
+                        Filtrer
+                    </button>
+                    <a href="{{ url_for('track.manage_subjects', track_id=track.id) }}"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition">
+                        Réinitialiser
+                    </a>
+                </form>
+            </div>
+        </div>
+
+        <!-- Courses Grid -->
+        {% if subjects %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for subject in subjects %}
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow">
+                <div class="bg-gradient-to-r from-primary to-accent p-4">
+                    <h3 class="text-lg font-bold text-white truncate">{{ subject.name }}</h3>
+                    <p class="text-white opacity-90 text-sm">{{ subject.semester.name if subject.semester else 'N/A' }}
+                    </p>
+                </div>
+                <div class="p-4">
+                    <!-- Session Counts -->
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div class="text-center p-2 bg-blue-50 rounded">
+                            <div class="text-xs text-gray-600">CM</div>
+                            <div class="text-lg font-bold text-blue-600">{{ subject.total_sessions_cm }}</div>
+                        </div>
+                        <div class="text-center p-2 bg-green-50 rounded">
+                            <div class="text-xs text-gray-600">TD</div>
+                            <div class="text-lg font-bold text-green-600">{{ subject.total_sessions_td }}</div>
+                        </div>
+                        <div class="text-center p-2 bg-purple-50 rounded">
+                            <div class="text-xs text-gray-600">TP</div>
+                            <div class="text-lg font-bold text-purple-600">{{ subject.total_sessions_tp }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Teachers -->
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-600 mb-1">Enseignants :</p>
+                        {% if subject.teachers %}
+                        <div class="flex flex-wrap gap-1">
+                            {% for teacher in subject.teachers[:2] %}
+                            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                                {{ teacher.first_name[0] }}. {{ teacher.last_name }}
+                            </span>
+                            {% endfor %}
+                            {% if subject.teachers|length > 2 %}
+                            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                                +{{ subject.teachers|length - 2 }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <p class="text-xs text-gray-400 italic">Aucun</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex space-x-2">
+                        <a href="{{ url_for('track.assign_subject_teachers', subject_id=subject.id) }}"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-center py-2 rounded-lg transition text-sm font-semibold">
+                            Gérer Enseignants
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-xl shadow-lg p-12 text-center">
+            <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                </path>
+            </svg>
+            <h3 class="mt-4 text-lg font-medium text-gray-900">Aucune matière</h3>
+            <p class="mt-2 text-sm text-gray-500">Commencez par créer votre première matière pour cette filière.</p>
+            <div class="mt-6">
+                <a href="{{ url_for('track.create_subject', track_id=track.id) }}"
+                    class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-accent to-highlight hover:from-highlight hover:to-accent text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Créer ma première matière
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <p class="text-sm text-yellow-700">Aucune filière sélectionnée.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

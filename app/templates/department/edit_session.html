@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier une Session - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4 max-w-2xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('department.view_subject_sessions', subject_id=session.subject_id) }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour aux Sessions
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">Modifier la Session</h1>
+            <p class="text-gray-600">{{ session.subject.name }}</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Formulaire -->
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form method="POST" action="{{ url_for('department.edit_session', session_id=session.id) }}">
+                <!-- Type de Session -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-3">Type de Session *</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="type" value="CM" class="peer sr-only" {% if session.type=='CM'
+                                %}checked{% endif %} required>
+                            <div
+                                class="border-2 border-gray-300 rounded-lg p-4 text-center peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-blue-300 transition-all duration-150">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-blue-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                <p class="font-semibold text-gray-700">CM</p>
+                                <p class="text-xs text-gray-500">Cours Magistral</p>
+                            </div>
+                        </label>
+
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="type" value="TD" class="peer sr-only" {% if session.type=='TD'
+                                %}checked{% endif %}>
+                            <div
+                                class="border-2 border-gray-300 rounded-lg p-4 text-center peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all duration-150">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-green-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p class="font-semibold text-gray-700">TD</p>
+                                <p class="text-xs text-gray-500">Travaux Dirigés</p>
+                            </div>
+                        </label>
+
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="type" value="TP" class="peer sr-only" {% if session.type=='TP'
+                                %}checked{% endif %}>
+                            <div
+                                class="border-2 border-gray-300 rounded-lg p-4 text-center peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-all duration-150">
+                                <svg class="w-8 h-8 mx-auto mb-2 text-purple-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <p class="font-semibold text-gray-700">TP</p>
+                                <p class="text-xs text-gray-500">Travaux Pratiques</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Date -->
+                <div class="mb-6">
+                    <label for="date" class="block text-gray-700 font-semibold mb-2">Date *</label>
+                    <input type="date" id="date" name="date" value="{{ session.date.strftime('%Y-%m-%d') }}" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+
+                <!-- Horaires -->
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="start_time" class="block text-gray-700 font-semibold mb-2">Heure de début *</label>
+                        <input type="time" id="start_time" name="start_time"
+                            value="{{ session.start_time.strftime('%H:%M') }}" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label for="end_time" class="block text-gray-700 font-semibold mb-2">Heure de fin *</label>
+                        <input type="time" id="end_time" name="end_time"
+                            value="{{ session.end_time.strftime('%H:%M') }}" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                </div>
+
+                <!-- Avertissement si session déjà démarrée -->
+                {% if session.started_at %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-yellow-500 mt-0.5 mr-3" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <p class="text-yellow-800 font-semibold mb-1">Attention</p>
+                            <p class="text-yellow-700 text-sm">
+                                Cette session a déjà été démarrée. Les présences enregistrées ne seront pas affectées
+                                par les modifications.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Boutons -->
+                <div class="flex items-center justify-between">
+                    <a href="{{ url_for('department.view_subject_sessions', subject_id=session.subject_id) }}"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-150 font-semibold">
+                        Annuler
+                    </a>
+                    <button type="submit"
+                        class="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                        Enregistrer les Modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

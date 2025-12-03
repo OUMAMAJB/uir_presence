@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Session en Cours - QR Code - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-primary to-secondary py-8">
+    <div class="container mx-auto px-4 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">Session en Cours</h1>
+            <p class="text-gray-100">{{ subject.name }}</p>
+        </div>
+
+        <!-- Carte Principale -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Informations de la Session -->
+            <div class="bg-gradient-to-r from-primary to-secondary p-6 text-white">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div>
+                        <p class="text-gray-100 text-sm mb-1">Type</p>
+                        <p class="text-2xl font-bold">{{ session.type }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-100 text-sm mb-1">Date</p>
+                        <p class="text-2xl font-bold">{{ session.date.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-100 text-sm mb-1">Horaire</p>
+                        <p class="text-2xl font-bold">{{ session.start_time.strftime('%H:%M') }} - {{
+                            session.end_time.strftime('%H:%M') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="p-12">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Scannez le QR Code</h2>
+                    <p class="text-gray-600">Le code se rafraîchit automatiquement toutes les 15 secondes</p>
+                </div>
+
+                <!-- QR Code Container -->
+                <div class="flex justify-center mb-8">
+                    <div class="bg-white p-8 rounded-2xl shadow-lg border-4 border-primary">
+                        <div id="qrcode" class="flex items-center justify-center"></div>
+                    </div>
+                </div>
+
+                <!-- Timer -->
+                <div class="text-center mb-8">
+                    <p class="text-gray-600 mb-2">Prochain rafraîchissement dans</p>
+                    <p id="timer" class="text-4xl font-bold text-primary">15</p>
+                    <p class="text-gray-600">secondes</p>
+                </div>
+
+                <!-- Compteur de Présences -->
+                <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 mb-8">
+                    <div class="flex items-center justify-center">
+                        <svg class="w-12 h-12 text-green-600 mr-4" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <div>
+                            <p class="text-gray-600 text-sm mb-1">Étudiants présents</p>
+                            <p id="count" class="text-4xl font-bold text-green-600">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bouton Arrêter -->
+                <div class="text-center">
+                    <button onclick="stopSession()"
+                        class="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-bold text-lg">
+                        <svg class="w-6 h-6 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                        </svg>
+                        Arrêter la Session
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Retour -->
+        <div class="text-center mt-8">
+            <a href="{{ url_for('track.view_subject_sessions', subject_id=session.subject_id) }}"
+                class="text-white hover:text-gray-200 transition-colors duration-150">
+                ← Retour aux sessions
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<script>
+    let currentToken = "{{ session.qr_code_token }}";
+    let qrcode = null;
+    let countdown = 15;
+    let countdownInterval = null;
+    let refreshInterval = null;
+    let countInterval = null;
+
+    // Générer le QR code
+    function generateQRCode(token) {
+        document.getElementById('qrcode').innerHTML = '';
+        qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: token,
+            width: 256,
+            height: 256,
+            colorDark: "#163A59",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    // Mettre à jour le timer
+    function updateTimer() {
+        document.getElementById('timer').textContent = countdown;
+        countdown--;
+
+        if (countdown < 0) {
+            countdown = 15;
+        }
+    }
+
+    // Rafraîchir le QR code
+    function refreshQRCode() {
+        fetch('/track/session/{{ session.id }}/refresh_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentToken = data.token;
+                    generateQRCode(currentToken);
+                    countdown = 15;
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors du rafraîchissement:', error);
+            });
+    }
+
+    // Mettre à jour le compteur de présences
+    function updateCount() {
+        fetch('/track/session/{{ session.id }}/count')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const countElement = document.getElementById('count');
+                    const newCount = data.count;
+                    const oldCount = parseInt(countElement.textContent);
+
+                    // Animation si le nombre a changé
+                    if (newCount > oldCount) {
+                        countElement.classList.add('scale-125', 'text-green-500');
+                        setTimeout(() => {
+                            countElement.classList.remove('scale-125', 'text-green-500');
+                        }, 300);
+                    }
+
+                    countElement.textContent = newCount;
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors de la mise à jour du compteur:', error);
+            });
+    }
+
+    // Arrêter la session
+    function stopSession() {
+        if (confirm('Êtes-vous sûr de vouloir arrêter la session ? Les étudiants ne pourront plus scanner le QR code.')) {
+            fetch('/track/session/{{ session.id }}/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        clearInterval(countdownInterval);
+                        clearInterval(refreshInterval);
+                        clearInterval(countInterval);
+
+                        window.location.href = '/track/subject/{{ session.subject_id }}/sessions';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors de l\'arrêt de la session:', error);
+                    alert('Erreur lors de l\'arrêt de la session. Veuillez réessayer.');
+                });
+        }
+    }
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function () {
+        generateQRCode(currentToken);
+        countdownInterval = setInterval(updateTimer, 1000);
+        refreshInterval = setInterval(refreshQRCode, 15000);
+        countInterval = setInterval(updateCount, 2000);
+        updateCount();
+    });
+
+    const style = document.createElement('style');
+    style.textContent = `.scale-125 { transform: scale(1.25); transition: transform 0.3s ease; }`;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}{{ subject.name }} - Sessions - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('track.my_courses') }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour à Mes Cours
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">{{ subject.name }}</h1>
+            <p class="text-gray-600">{{ subject.track.name }} - {{ subject.semester.name }}</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Statistiques -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-100 text-sm mb-1">CM Planifiés</p>
+                        <p class="text-4xl font-bold">{{ subject.total_sessions_cm }}</p>
+                    </div>
+                    <svg class="w-12 h-12 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-green-100 text-sm mb-1">TD Planifiés</p>
+                        <p class="text-4xl font-bold">{{ subject.total_sessions_td }}</p>
+                    </div>
+                    <svg class="w-12 h-12 text-green-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-purple-100 text-sm mb-1">TP Planifiés</p>
+                        <p class="text-4xl font-bold">{{ subject.total_sessions_tp }}</p>
+                    </div>
+                    <svg class="w-12 h-12 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions et Filtres -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <!-- Bouton Créer -->
+                <a href="{{ url_for('track.create_session', subject_id=subject.id) }}"
+                    class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Créer une Session
+                </a>
+
+                <!-- Filtres -->
+                <form method="GET" class="flex gap-4">
+                    <input type="date" name="date" value="{{ date_filter or '' }}"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+
+                    <select name="type"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="">Tous les types</option>
+                        <option value="CM" {% if type_filter=='CM' %}selected{% endif %}>CM</option>
+                        <option value="TD" {% if type_filter=='TD' %}selected{% endif %}>TD</option>
+                        <option value="TP" {% if type_filter=='TP' %}selected{% endif %}>TP</option>
+                    </select>
+
+                    <button type="submit"
+                        class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-150 font-semibold">
+                        Filtrer
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Liste des Sessions -->
+        {% if sessions %}
+        <div class="space-y-4">
+            {% for session in sessions %}
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div class="p-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <!-- Informations de la session -->
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <!-- Badge Type -->
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold
+                                    {% if session.type == 'CM' %}bg-blue-100 text-blue-800
+                                    {% elif session.type == 'TD' %}bg-green-100 text-green-800
+                                    {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                    {{ session.type }}
+                                </span>
+
+                                <!-- Badge Statut -->
+                                {% if session.is_active %}
+                                <span
+                                    class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold animate-pulse">
+                                    ● En cours
+                                </span>
+                                {% elif session.started_at %}
+                                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-semibold">
+                                    Terminée
+                                </span>
+                                {% else %}
+                                <span
+                                    class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
+                                    Planifiée
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    {{ session.date.strftime('%d/%m/%Y') }}
+                                </div>
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {{ session.start_time.strftime('%H:%M') }} - {{ session.end_time.strftime('%H:%M')
+                                    }}
+                                </div>
+                                {% if session.started_at %}
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Démarrée le {{ session.started_at.strftime('%d/%m à %H:%M') }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-center gap-2">
+                            {% if not session.is_active and not session.started_at %}
+                            <!-- Démarrer -->
+                            <a href="{{ url_for('track.session_qr', session_id=session.id) }}"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-150 font-semibold">
+                                Démarrer
+                            </a>
+
+                            <!-- Modifier -->
+                            <a href="{{ url_for('track.edit_session', session_id=session.id) }}"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-150 font-semibold">
+                                Modifier
+                            </a>
+
+                            <!-- Supprimer -->
+                            <form method="POST" action="{{ url_for('track.delete_session', session_id=session.id) }}"
+                                onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette session ?');"
+                                class="inline">
+                                <button type="submit"
+                                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-150 font-semibold">
+                                    Supprimer
+                                </button>
+                            </form>
+                            {% elif session.is_active %}
+                            <!-- Session en cours -->
+                            <a href="{{ url_for('track.session_qr', session_id=session.id) }}"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-150 font-semibold animate-pulse">
+                                Voir QR Code
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Aucune session -->
+        <div class="bg-white rounded-xl shadow-lg p-12 text-center">
+            <svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <h3 class="text-2xl font-bold text-gray-400 mb-2">Aucune session trouvée</h3>
+            <p class="text-gray-500 mb-6">Créez votre première session pour commencer.</p>
+            <a href="{{ url_for('track.create_session', subject_id=subject.id) }}"
+                class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Créer une Session
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

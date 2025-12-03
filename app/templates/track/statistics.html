@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Statistiques - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <nav class="bg-gradient-to-r from-secondary to-accent shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="{{ url_for('track.dashboard') }}"
+                    class="text-2xl font-bold text-white hover:text-light transition-colors duration-200">← Retour</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-primary mb-2">Statistiques de la Filière</h2>
+            <p class="text-gray-600">{% if stats.track %}{{ stats.track.name }}{% else %}Filière{% endif %}</p>
+        </div>
+
+        {% if stats.track %}
+        <!-- Overview Cards -->
+        <div class="grid md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Étudiants</p>
+                        <p class="text-3xl font-bold text-blue-600">{{ stats.track.students|length }}</p>
+                    </div>
+                    <svg class="w-12 h-12 text-blue-500 opacity-50" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Matières</p>
+                        <p class="text-3xl font-bold text-green-600">{{ stats.subjects|length }}</p>
+                    </div>
+                    <svg class="w-12 h-12 text-green-500 opacity-50" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Enseignants</p>
+                        <p class="text-3xl font-bold text-purple-600">{{ stats.track.teachers|length }}</p>
+                    </div>
+                    <svg class="w-12 h-12 text-purple-500 opacity-50" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-accent">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm mb-1">Séances Prévues</p>
+                        {% set total_sessions = stats.subjects|sum(attribute='total_sessions_cm') +
+                        stats.subjects|sum(attribute='total_sessions_td') +
+                        stats.subjects|sum(attribute='total_sessions_tp') %}
+                        <p class="text-3xl font-bold text-accent">{{ total_sessions }}</p>
+                    </div>
+                    <svg class="w-12 h-12 text-accent opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Overview -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+            <div class="bg-gradient-to-r from-secondary to-accent px-6 py-4">
+                <h3 class="text-xl font-bold text-white">Vue d'ensemble des Matières</h3>
+            </div>
+            <div class="p-6">
+                {% if stats.subjects %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Matière</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">CM</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">TD</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">TP</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Total</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                                    Enseignants</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for subject in stats.subjects %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ subject.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ subject.semester.name if subject.semester else
+                                        'N/A' }}</div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{{
+                                        subject.total_sessions_cm }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">{{
+                                        subject.total_sessions_td }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">{{
+                                        subject.total_sessions_tp }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <strong class="text-accent">{{ subject.total_sessions_cm + subject.total_sessions_td
+                                        + subject.total_sessions_tp }}</strong>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{
+                                        subject.teachers|length }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <p class="text-gray-500">Aucune matière créée.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid md:grid-cols-3 gap-6">
+            <a href="{{ url_for('track.view_courses', track_id=stats.track.id) }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-center">
+                    <svg class="w-12 h-12 mx-auto text-accent mb-4" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
+                    </svg>
+                    <h3 class="text-lg font-bold text-gray-900">Gérer les Cours</h3>
+                </div>
+            </a>
+
+            <a href="{{ url_for('track.view_students', track_id=stats.track.id) }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-center">
+                    <svg class="w-12 h-12 mx-auto text-accent mb-4" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
+                    <h3 class="text-lg font-bold text-gray-900">Voir les Étudiants</h3>
+                </div>
+            </a>
+
+            <a href="{{ url_for('track.view_attendances', track_id=stats.track.id) }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-center">
+                    <svg class="w-12 h-12 mx-auto text-accent mb-4" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    <h3 class="text-lg font-bold text-gray-900">Consulter Présences</h3>
+                </div>
+            </a>
+        </div>
+        {% else %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <p class="text-sm text-yellow-700">Aucune filière sélectionnée.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

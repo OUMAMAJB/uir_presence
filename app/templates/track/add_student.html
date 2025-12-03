@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Ajouter Étudiant - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-secondary to-accent shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="{{ url_for('track.dashboard') }}"
+                    class="text-2xl font-bold text-white hover:text-light transition-colors duration-200">← Retour</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-gradient-to-r from-secondary to-accent p-6">
+                <h2 class="text-2xl font-bold text-white">Ajouter un Étudiant</h2>
+                <p class="text-white opacity-90">Filière : {{ track.name if track else 'N/A' }}</p>
+            </div>
+
+            <div class="p-8">
+                <form method="POST" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Prénom <span class="text-red-500">*</span>
+                            </label>
+                            <input id="first_name" name="first_name" type="text" required placeholder="Ex: Ahmed"
+                                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent focus:border-accent">
+                        </div>
+
+                        <div>
+                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Nom <span class="text-red-500">*</span>
+                            </label>
+                            <input id="last_name" name="last_name" type="text" required placeholder="Ex: Alami"
+                                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent focus:border-accent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email <span class="text-red-500">*</span>
+                        </label>
+                        <input id="email" name="email" type="email" required placeholder="Ex: ahmed.alami@uir.ac.ma"
+                            class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent focus:border-accent">
+                        <p class="mt-2 text-sm text-gray-500">
+                            Un email de bienvenue sera envoyé automatiquement
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="academic_year" class="block text-sm font-medium text-gray-700 mb-2">
+                            Année d'étude <span class="text-red-500">*</span>
+                        </label>
+                        <select id="academic_year" name="academic_year" required
+                            class="block w-full px-4 py-3 text-base border-gray-300 focus:outline-none focus:ring-accent focus:border-accent rounded-lg">
+                            <option value="">-- Sélectionner --</option>
+                            <option value="1">1ère année</option>
+                            <option value="2">2ème année</option>
+                            <option value="3">3ème année</option>
+                            <option value="4">4ème année</option>
+                            <option value="5">5ème année</option>
+                        </select>
+                    </div>
+
+                    <div class="flex space-x-4 pt-6 border-t">
+                        <button type="submit"
+                            class="flex-1 bg-gradient-to-r from-accent to-highlight hover:from-highlight hover:to-accent text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105">
+                            Ajouter l'Étudiant
+                        </button>
+                        <a href="{{ url_for('track.dashboard') }}"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg transition-all duration-300 text-center">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="mt-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm text-green-700">
+                        L'étudiant recevra un email avec un lien pour créer son mot de passe. Ce lien sera valide
+                        pendant <strong>72 heures</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Department Dashboard - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-secondary to-accent shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-white">UIR Presence</h1>
+                    <span class="ml-4 px-3 py-1 bg-white text-secondary text-sm font-semibold rounded-full">
+                        {% if current_user.role.name == 'admin' %}Super Admin{% else %}Department{% endif %}
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if current_user.role.name == 'admin' %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="text-white hover:text-light">← Retour Admin</a>
+                    {% endif %}
+                    <span class="text-white">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="bg-white text-secondary px-4 py-2 rounded-lg hover:bg-light transition-colors duration-200">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-primary mb-2">Gestion Département</h2>
+            <p class="text-gray-600">{% if department %}{{ department.name }}{% else %}Toutes les filières{% endif %}
+            </p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded">
+            <p class="font-medium">{{ message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Action Cards -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- Carte Nouvelle Filière -->
+            <a href="{{ url_for('department.create_track') }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-accent">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Nouvelle Filière</h3>
+                        <p class="text-gray-600">Créer une filière</p>
+                    </div>
+                    <div class="bg-accent bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Gestion Enseignants -->
+            <a href="{{ url_for('department.manage_teachers') }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-primary">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Enseignants</h3>
+                        <p class="text-gray-600">Gérer les affectations</p>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Cours -->
+            <a href="{{ url_for('department.view_courses') }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-secondary">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Cours</h3>
+                        <p class="text-gray-600">Gérer les sessions</p>
+                    </div>
+                    <div class="bg-secondary bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Présences (NOUVEAU) -->
+            <a href="{{ url_for('department.view_attendances') }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Présences</h3>
+                        <p class="text-gray-600">Consulter l'historique</p>
+                    </div>
+                    <div class="bg-green-100 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Statistiques -->
+            <a href="{{ url_for('department.statistics') }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-highlight">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Statistiques</h3>
+                        <p class="text-gray-600">Analyse globale</p>
+                    </div>
+                    <div class="bg-highlight bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-highlight" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Tracks List -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="bg-gradient-to-r from-secondary to-accent px-6 py-4">
+                <h3 class="text-xl font-bold text-white">Filières</h3>
+            </div>
+            <div class="p-6">
+                {% if tracks %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nom</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Chef de Filière</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Enseignants</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for track in tracks %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ track.name }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <form action="{{ url_for('department.assign_track_head', track_id=track.id) }}"
+                                        method="POST" class="flex items-center space-x-2">
+                                        <select name="teacher_id"
+                                            class="text-sm border-gray-300 rounded-md shadow-sm focus:border-accent focus:ring focus:ring-accent focus:ring-opacity-50 max-w-xs">
+                                            <option value="">Choisir un chef...</option>
+                                            {% if teachers %}
+                                            {% for teacher in teachers %}
+                                            <option value="{{ teacher.id }}" {% if track.head_id==teacher.id
+                                                %}selected{% endif %}>
+                                                {{ teacher.first_name }} {{ teacher.last_name }}
+                                            </option>
+                                            {% endfor %}
+                                            {% else %}
+                                            <option disabled>Aucun enseignant</option>
+                                            {% endif %}
+                                        </select>
+                                        <button type="submit"
+                                            class="text-xs bg-accent text-white px-2 py-1 rounded hover:bg-opacity-90 transition"
+                                            title="Valider">✓</button>
+                                    </form>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-white">
+                                        {{ track.teachers|length }} enseignant(s)
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2-2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    <p class="mt-2 text-gray-500">Aucune filière. Créez-en une pour commencer !</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}QR Code - Session {{ session.id }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-primary via-secondary to-accent flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-accent to-highlight p-6 text-center">
+                <h1 class="text-2xl font-bold text-primary mb-2">{{ session.subject.name }}</h1>
+                <p class="text-primary opacity-80">{{ session.type }} - {{ session.date.strftime('%d/%m/%Y') }} at {{
+                    session.start_time.strftime('%H:%M') }}</p>
+            </div>
+
+            <!-- QR Code Display -->
+            <div class="p-8 text-center">
+                <div class="bg-light rounded-xl p-8 inline-block mb-6">
+                    <div id="qr-code" class="bg-white p-4 rounded-lg"></div>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    <div class="flex items-center justify-center space-x-2">
+                        <div id="status-indicator" class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        <span id="status-text" class="text-gray-600 font-medium">Not started</span>
+                    </div>
+
+                    <div class="text-sm text-gray-500">
+                        <p>QR Code refreshes every <span class="font-bold text-accent">15 seconds</span></p>
+                        <p class="mt-1">Next refresh in: <span id="countdown"
+                                class="font-mono font-bold text-highlight">--</span>s</p>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex space-x-4 justify-center">
+                    <button id="start-btn" onclick="startSession()"
+                        class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Start Session</span>
+                    </button>
+
+                    <button id="stop-btn" onclick="stopSession()"
+                        class="hidden bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+                        </svg>
+                        <span>Stop Session</span>
+                    </button>
+                </div>
+
+                <div class="mt-6">
+                    <a href="{{ url_for('teacher.dashboard') }}"
+                        class="text-secondary hover:text-accent transition-colors duration-200">
+                        ← Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+    let qrCodeInstance = null;
+    let refreshInterval = null;
+    let countdownInterval = null;
+    let countdown = 15;
+    const sessionId = {{ session.id }};
+
+    function generateQRCode(token) {
+        const qrContainer = document.getElementById('qr-code');
+        qrContainer.innerHTML = '';
+
+        qrCodeInstance = new QRCode(qrContainer, {
+            text: token,
+            width: 256,
+            height: 256,
+            colorDark: "#163A59",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    function updateStatus(isActive) {
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        if (isActive) {
+            indicator.className = 'w-3 h-3 bg-green-500 rounded-full animate-pulse';
+            statusText.textContent = 'Session Active';
+            statusText.className = 'text-green-600 font-medium';
+            startBtn.classList.add('hidden');
+            stopBtn.classList.remove('hidden');
+        } else {
+            indicator.className = 'w-3 h-3 bg-gray-400 rounded-full';
+            statusText.textContent = 'Session Inactive';
+            statusText.className = 'text-gray-600 font-medium';
+            startBtn.classList.remove('hidden');
+            stopBtn.classList.add('hidden');
+        }
+    }
+
+    function startCountdown() {
+        countdown = 15;
+        document.getElementById('countdown').textContent = countdown;
+
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        countdownInterval = setInterval(() => {
+            countdown--;
+            document.getElementById('countdown').textContent = countdown;
+            if (countdown <= 0) {
+                countdown = 15;
+            }
+        }, 1000);
+    }
+
+    async function startSession() {
+        try {
+            const response = await fetch(`/teacher/session/${sessionId}/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                generateQRCode(data.token);
+                updateStatus(true);
+                startCountdown();
+
+                // Refresh token every 15 seconds
+                refreshInterval = setInterval(refreshToken, 15000);
+            }
+        } catch (error) {
+            console.error('Error starting session:', error);
+            alert('Failed to start session');
+        }
+    }
+
+    async function refreshToken() {
+        try {
+            const response = await fetch(`/teacher/session/${sessionId}/refresh_token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                generateQRCode(data.token);
+                startCountdown();
+            }
+        } catch (error) {
+            console.error('Error refreshing token:', error);
+        }
+    }
+
+    async function stopSession() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        try {
+            const response = await fetch(`/teacher/session/${sessionId}/stop`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('qr-code').innerHTML = '<p class="text-gray-500 py-16">Session stopped</p>';
+                document.getElementById('countdown').textContent = '--';
+                updateStatus(false);
+            }
+        } catch (error) {
+            console.error('Error stopping session:', error);
+        }
+    }
+</script>
+{% endblock %}

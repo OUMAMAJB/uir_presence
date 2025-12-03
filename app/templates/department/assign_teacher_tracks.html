@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Affecter Enseignant - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div class="container mx-auto px-4 max-w-3xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <a href="{{ url_for('department.dashboard') }}"
+                class="inline-flex items-center text-primary hover:text-secondary transition-colors duration-150 mb-4">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour au Dashboard
+            </a>
+            <h1 class="text-4xl font-bold text-primary mb-2">Affecter aux Filières</h1>
+            <p class="text-gray-600">Enseignant : <span class="font-semibold text-primary">{{ teacher.first_name }} {{
+                    teacher.last_name }}</span></p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-100 text-green-800{% elif category == 'danger' %}bg-red-100 text-red-800{% elif category == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Formulaire -->
+        <div class="bg-white rounded-xl shadow-lg p-8">
+            <form method="POST" action="{{ url_for('department.assign_teacher_tracks', teacher_id=teacher.id) }}">
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-4">
+                        Sélectionnez les filières où cet enseignant interviendra :
+                    </label>
+
+                    {% if tracks %}
+                    <div class="space-y-3">
+                        {% for track in tracks %}
+                        <div
+                            class="border border-gray-200 rounded-lg p-4 hover:border-primary hover:bg-gray-50 transition-all duration-150">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" name="track_ids" value="{{ track.id }}"
+                                    class="w-5 h-5 text-primary focus:ring-primary rounded" {% if track in
+                                    teacher.tracks_taught %}checked{% endif %}>
+                                <div class="ml-4 flex-1">
+                                    <p class="font-semibold text-gray-900">{{ track.name }}</p>
+                                </div>
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                        <svg class="w-12 h-12 text-yellow-500 mx-auto mb-3" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p class="text-yellow-800 font-semibold mb-2">Aucune filière disponible</p>
+                        <p class="text-yellow-700 text-sm">Veuillez d'abord créer des filières dans ce département.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if tracks %}
+                <!-- Boutons -->
+                <div class="flex items-center justify-between mt-8">
+                    <a href="{{ url_for('department.dashboard') }}"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-150 font-semibold">
+                        Annuler
+                    </a>
+                    <button type="submit"
+                        class="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 font-semibold">
+                        Enregistrer les Affectations
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

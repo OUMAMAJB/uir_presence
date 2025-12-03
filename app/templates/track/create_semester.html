@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Créer Semestre - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-secondary to-accent shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="{{ url_for('track.dashboard') }}"
+                    class="text-2xl font-bold text-white hover:text-light transition-colors duration-200">← Retour</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-gradient-to-r from-secondary to-accent p-6">
+                <h2 class="text-2xl font-bold text-white">Créer un Semestre</h2>
+                <p class="text-white opacity-90">Année Académique : {{ academic_year.name }}</p>
+            </div>
+
+            <div class="p-8">
+                <form method="POST" class="space-y-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nom du Semestre <span class="text-red-500">*</span>
+                        </label>
+                        <select id="name" name="name" required
+                            class="block w-full px-4 py-3 text-base border-gray-300 focus:outline-none focus:ring-accent focus:border-accent rounded-lg">
+                            <option value="">-- Sélectionner un semestre --</option>
+                            <option value="S1">S1 - Premier Semestre</option>
+                            <option value="S2">S2 - Deuxième Semestre</option>
+                            <option value="S3">S3 - Troisième Semestre</option>
+                            <option value="S4">S4 - Quatrième Semestre</option>
+                            <option value="S5">S5 - Cinquième Semestre</option>
+                            <option value="S6">S6 - Sixième Semestre</option>
+                            <option value="S7">S7 - Septième Semestre</option>
+                            <option value="S8">S8 - Huitième Semestre</option>
+                        </select>
+                    </div>
+
+                    <div class="flex space-x-4 pt-6 border-t">
+                        <button type="submit"
+                            class="flex-1 bg-gradient-to-r from-accent to-highlight hover:from-highlight hover:to-accent text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105">
+                            Créer le Semestre
+                        </button>
+                        <a href="{{ url_for('track.dashboard') }}"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg transition-all duration-300 text-center">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+            <div class="flex">
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        Après avoir créé vos semestres, vous pourrez y associer des matières avec leurs volumes
+                        horaires.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

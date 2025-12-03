@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Importer Enseignants - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
+        <div class="md:flex">
+            <div class="p-8 w-full">
+                <div class="uppercase tracking-wide text-sm text-accent font-semibold mb-1">Administration</div>
+                <h2 class="block mt-1 text-lg leading-tight font-medium text-black">Importer des Enseignants via Excel
+                </h2>
+                <p class="mt-2 text-gray-500">Le fichier Excel doit contenir les colonnes suivantes :
+                    <br><code>First Name</code>, <code>Last Name</code>, <code>Email</code>, <code>Department</code>.
+                </p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="mt-4">
+                    {% for category, message in messages %}
+                    <div
+                        class="p-2 mb-2 rounded {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <form method="POST" enctype="multipart/form-data" class="mt-6">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="file">
+                            Fichier Excel (.xlsx, .xls)
+                        </label>
+                        <input type="file" name="file" id="file" accept=".xlsx, .xls" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <button type="submit"
+                            class="bg-primary hover:bg-secondary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
+                            Importer
+                        </button>
+                        <a href="{{ url_for('admin.dashboard') }}"
+                            class="inline-block align-baseline font-bold text-sm text-primary hover:text-secondary">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+
+                <div class="mt-6">
+                    <a href="#" class="text-sm text-accent hover:underline">Télécharger un modèle Excel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

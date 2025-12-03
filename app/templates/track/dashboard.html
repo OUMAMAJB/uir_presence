@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Track Dashboard - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-secondary to-accent shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-white">UIR Presence</h1>
+                    <span class="ml-4 px-3 py-1 bg-white text-secondary text-sm font-semibold rounded-full">
+                        Filière
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if current_user.role.name == 'super_admin' %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="text-white hover:text-light">← Retour Admin</a>
+                    {% elif current_user.role.name == 'admin_dept' %}
+                    <a href="{{ url_for('department.dashboard') }}" class="text-white hover:text-light">← Retour
+                        Département</a>
+                    {% endif %}
+                    <span class="text-white">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="bg-white text-secondary px-4 py-2 rounded-lg hover:bg-light transition-colors duration-200">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-primary mb-2">Gestion Filière</h2>
+            <p class="text-gray-600">{% if track %}{{ track.name }}{% else %}Non assigné{% endif %}</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded">
+            <p class="font-medium">{{ message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% if track %}
+        <!-- Action Cards -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- Carte Structure Académique -->
+            <a href="{{ url_for('track.create_academic_year') }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-accent">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Structure</h3>
+                        <p class="text-gray-600">Années & Semestres</p>
+                    </div>
+                    <div class="bg-accent bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Gestion Matières (Admin) -->
+            <a href="{{ url_for('track.manage_subjects', track_id=track.id) }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-primary">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Matières</h3>
+                        <p class="text-gray-600">Créer et affecter</p>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Mes Cours (Enseignant) -->
+            <a href="{{ url_for('track.my_courses') }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-secondary">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Mes Cours</h3>
+                        <p class="text-gray-600">Gérer mes sessions</p>
+                    </div>
+                    <div class="bg-secondary bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Présences -->
+            <a href="{{ url_for('track.view_attendances', track_id=track.id) }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Présences</h3>
+                        <p class="text-gray-600">Consulter l'historique</p>
+                    </div>
+                    <div class="bg-green-100 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Carte Statistiques -->
+            <a href="{{ url_for('track.statistics', track_id=track.id) }}"
+                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-l-4 border-highlight">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-primary mb-2">Statistiques</h3>
+                        <p class="text-gray-600">Analyse globale</p>
+                    </div>
+                    <div class="bg-highlight bg-opacity-10 p-4 rounded-full">
+                        <svg class="w-8 h-8 text-highlight" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Students List (Equivalent to Tracks List in Dept Dashboard) -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="bg-gradient-to-r from-secondary to-accent px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Étudiants</h3>
+                <div class="flex space-x-2">
+                    <a href="{{ url_for('track.add_student', track_id=track.id) }}"
+                        class="bg-white text-secondary px-3 py-1 rounded-lg hover:bg-light transition-colors duration-200 text-xs font-semibold"
+                        title="Ajouter">
+                        +
+                    </a>
+                    <a href="{{ url_for('track.import_students', track_id=track.id) }}"
+                        class="bg-white text-secondary px-3 py-1 rounded-lg hover:bg-light transition-colors duration-200 text-xs font-semibold"
+                        title="Importer">
+                        📥
+                    </a>
+                </div>
+            </div>
+            <div class="p-6">
+                {% if students %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nom Complet</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Email</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Année</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for student in students[:10] %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div
+                                            class="flex-shrink-0 h-8 w-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-xs mr-3">
+                                            {{ student.first_name[0] }}{{ student.last_name[0] }}
+                                        </div>
+                                        <div class="text-sm font-medium text-gray-900">{{ student.first_name }} {{
+                                            student.last_name }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{{ student.email }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if student.academic_year %}
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        {{ student.academic_year }}ème année
+                                    </span>
+                                    {% else %}
+                                    <span class="text-gray-400 text-xs">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="#" class="text-accent hover:text-highlight">Détails</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if students|length > 10 %}
+                <div class="text-center pt-4">
+                    <a href="{{ url_for('track.view_students', track_id=track.id) }}"
+                        class="text-sm text-accent hover:text-highlight font-semibold">
+                        Voir tous les {{ students|length }} étudiants →
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                        </path>
+                    </svg>
+                    <p class="mt-2 text-gray-500">Aucun étudiant inscrit.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% else %}
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        Vous n'êtes assigné à aucune filière. Contactez votre chef de département.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Présences - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <nav class="bg-gradient-to-r from-secondary to-accent shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="{{ url_for('track.dashboard') }}"
+                    class="text-2xl font-bold text-white hover:text-light transition-colors duration-200">← Retour</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-primary mb-2">Consultation des Présences</h2>
+            <p class="text-gray-600">{% if stats.track %}{{ stats.track.name }}{% else %}Filière{% endif %}</p>
+        </div>
+
+        <!-- Filters  -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
+            <div class="bg-gradient-to-r from-secondary to-accent px-6 py-4">
+                <h3 class="text-xl font-bold text-white">Filtres</h3>
+            </div>
+            <div class="p-6">
+                <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="hidden" name="track_id" value="{{ stats.track.id if stats.track else '' }}">
+                    <select name="academic_year"
+                        class="px-4 py-2 border-gray-300 rounded-lg focus:ring-accent focus:border-accent">
+                        <option value="">Toutes les années</option>
+                        <option value="1" {% if filters.academic_year==1 %}selected{% endif %}>1ère année</option>
+                        <option value="2" {% if filters.academic_year==2 %}selected{% endif %}>2ème année</option>
+                        <option value="3" {% if filters.academic_year==3 %}selected{% endif %}>3ème année</option>
+                        <option value="4" {% if filters.academic_year==4 %}selected{% endif %}>4ème année</option>
+                        <option value="5" {% if filters.academic_year==5 %}selected{% endif %}>5ème année</option>
+                    </select>
+                    <select name="semester_id"
+                        class="px-4 py-2 border-gray-300 rounded-lg focus:ring-accent focus:border-accent">
+                        <option value="">Tous les semestres</option>
+                        {% for semester in semesters %}
+                        <option value="{{ semester.id }}" {% if filters.semester_id==semester.id %}selected{% endif %}>
+                            {{ semester.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <select name="subject_id"
+                        class="px-4 py-2 border-gray-300 rounded-lg focus:ring-accent focus:border-accent">
+                        <option value="">Toutes les matières</option>
+                        {% for subject in subjects %}
+                        <option value="{{ subject.id }}" {% if filters.subject_id==subject.id %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="flex space-x-2">
+                        <button type="submit"
+                            class="flex-1 bg-accent hover:bg-highlight text-white px-6 py-2 rounded-lg transition">Filtrer</button>
+                        <a href="{{ url_for('track.view_attendances', track_id=stats.track.id if stats.track else '') }}"
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition text-center">Réinitialiser</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Attendances List -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-secondary to-accent px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Présences ({{ attendances|length }})</h3>
+                {% if attendances %}
+                <button onclick="exportToCSV()"
+                    class="bg-white text-secondary px-4 py-2 rounded-lg hover:bg-light transition text-sm font-semibold">
+                    📥 Exporter CSV
+                </button>
+                {% endif %}
+            </div>
+            <div class="p-6">
+                {% if attendances %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full" id="attendances-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Étudiant
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Matière</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Heure de
+                                    scan</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for attendance, session, subject, student in attendances %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div
+                                            class="bg-primary text-white rounded-full h-8 w-8 flex items-center justify-center font-bold text-xs mr-3">
+                                            {{ student.first_name[0] }}{{ student.last_name[0] }}
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ student.first_name }} {{
+                                                student.last_name }}</div>
+                                            <div class="text-xs text-gray-500">{{ student.email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm">{{ subject.name }}</td>
+                                <td class="px-6 py-4">
+                                    {% if session.type == 'CM' %}
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">CM</span>
+                                    {% elif session.type == 'TD' %}
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">TD</span>
+                                    {% else %}
+                                    <span
+                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">TP</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-sm">{{ session.date.strftime('%d/%m/%Y') }}</td>
+                                <td class="px-6 py-4 text-sm">{{ attendance.timestamp.strftime('%H:%M:%S') if
+                                    attendance.timestamp else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    <p class="mt-2 text-gray-500">Aucune présence trouvée.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function exportToCSV() {
+        const table = document.getElementById('attendances-table');
+        let csv = [];
+
+        // Headers
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => {
+            headers.push(th.textContent.trim());
+        });
+        csv.push(headers.join(','));
+
+        // Rows
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            const row = [];
+            tr.querySelectorAll('td').forEach(td => {
+                row.push('"' + td.textContent.trim().replace(/"/g, '""') + '"');
+            });
+            csv.push(row.join(','));
+        });
+
+        // Download
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'presences.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %}

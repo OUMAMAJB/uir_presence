@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-primary to-secondary shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-white">UIR Presence</h1>
+                    <span
+                        class="ml-4 px-3 py-1 bg-white text-primary text-sm font-semibold rounded-full">Enseignant</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-white">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="bg-white text-primary px-4 py-2 rounded-lg hover:bg-light transition-colors duration-200">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-primary mb-2">Mes Cours</h2>
+            <p class="text-gray-600">Gérez vos sessions et présences</p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded">
+            <p class="font-medium">{{ message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% if subjects %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for subject in subjects %}
+            <a href="{{ url_for('teacher.course_details', subject_id=subject.id) }}"
+                class="block bg-white rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 overflow-hidden border-t-4 border-accent">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-gray-900">{{ subject.name }}</h3>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                            {{ subject.semester.name if subject.semester else 'N/A' }}
+                        </span>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>CM:</span>
+                            <span class="font-medium">{{ subject.total_sessions_cm }}h</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>TD:</span>
+                            <span class="font-medium">{{ subject.total_sessions_td }}h</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>TP:</span>
+                            <span class="font-medium">{{ subject.total_sessions_tp }}h</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                    <div class="flex items-center justify-between text-accent font-semibold">
+                        <span>Gérer Sessions</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12 bg-white rounded-xl shadow-lg">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                </path>
+            </svg>
+            <p class="mt-2 text-gray-500">Aucun cours assigné pour le moment.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

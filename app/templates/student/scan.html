@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Scanner QR Code - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="bg-gradient-to-r from-primary to-secondary p-6 text-center">
+            <h2 class="text-2xl font-bold text-white">Scanner QR Code</h2>
+            <p class="text-white opacity-80">Placez le code dans le cadre</p>
+        </div>
+
+        <div class="p-6">
+            <div id="reader" class="w-full rounded-lg overflow-hidden bg-black"></div>
+
+            <div id="result-message" class="mt-4 hidden p-4 rounded-lg text-center font-bold"></div>
+
+            <div class="mt-6 text-center">
+                <a href="{{ url_for('student.dashboard') }}" class="text-gray-600 hover:text-primary font-medium">
+                    Retour au tableau de bord
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    function onScanSuccess(decodedText, decodedResult) {
+        // Handle the scanned code as you like, for example:
+        console.log(`Code matched = ${decodedText}`, decodedResult);
+
+        // Stop scanning
+        html5QrcodeScanner.clear();
+
+        // Send to backend
+        fetch("{{ url_for('student.scan_qr') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token: decodedText }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result-message');
+                resultDiv.classList.remove('hidden');
+
+                if (data.success) {
+                    resultDiv.className = "mt-4 p-4 rounded-lg text-center font-bold bg-green-100 text-green-800";
+                    resultDiv.innerText = data.message;
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('student.dashboard') }}";
+                    }, 2000);
+                } else {
+                    resultDiv.className = "mt-4 p-4 rounded-lg text-center font-bold bg-red-100 text-red-800";
+                    resultDiv.innerText = data.error || "Erreur lors de l'enregistrement";
+
+                    // Restart scanner after error? Or let user click button?
+                    // For now, let user refresh or go back.
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const resultDiv = document.getElementById('result-message');
+                resultDiv.classList.remove('hidden');
+                resultDiv.className = "mt-4 p-4 rounded-lg text-center font-bold bg-red-100 text-red-800";
+                resultDiv.innerText = "Erreur de connexion";
+            });
+    }
+
+    function onScanFailure(error) {
+        // handle scan failure, usually better to ignore and keep scanning.
+        // for example:
+        // console.warn(`Code scan error = ${error}`);
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        /* verbose= */ false);
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+</script>
+{% endblock %}

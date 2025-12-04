@@ -109,6 +109,12 @@
             </div>
         </div>
 
+        <!-- Compteur de sessions -->
+        <div class="mb-4">
+            <p class="text-gray-600"><span class="font-semibold text-primary text-lg">{{ sessions|length }}</span> {% if
+                type_filter %}{{ type_filter }}{% else %}session(s){% endif %} créée(s)</p>
+        </div>
+
         <!-- Liste des Sessions -->
         {% if sessions %}
         <div class="space-y-4">

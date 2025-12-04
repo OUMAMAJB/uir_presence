@@ -45,21 +45,37 @@ def submit_scan():
     data = request.get_json()
     token = data.get('token')
     
+    print(f"DEBUG: Token reçu: {token}")
+    
     if not token:
         return jsonify({'success': False, 'message': 'Token manquant'}), 400
     
     # Trouver la session active avec ce token
     session = Session.query.filter_by(qr_code_token=token, is_active=True).first()
     
+    print(f"DEBUG: Session trouvée: {session}")
+    if session:
+        print(f"DEBUG: Session ID: {session.id}, Subject: {session.subject.name}, Active: {session.is_active}")
+    
     if not session:
-        return jsonify({'success': False, 'message': 'QR code invalide ou expiré'}), 404
+        # Vérifier si le token existe mais session non active
+        inactive_session = Session.query.filter_by(qr_code_token=token).first()
+        if inactive_session:
+            print(f"DEBUG: Session existe mais n'est pas active. is_active={inactive_session.is_active}")
+            return jsonify({'success': False, 'message': 'Cette session n\'est pas active. Le professeur doit d\'abord la démarrer.'}), 404
+        else:
+            print(f"DEBUG: Aucune session trouvée avec ce token")
+            return jsonify({'success': False, 'message': 'QR code invalide ou expiré'}), 404
     
     # Vérifier que l'étudiant est inscrit à cette matière
+    print(f"DEBUG: Enrolled subjects: {[s.name for s in current_user.enrolled_subjects]}")
     if session.subject not in current_user.enrolled_subjects:
-        return jsonify({'success': False, 'message': 'Vous n\'êtes pas inscrit à cette matière'}), 403
+        print(f"DEBUG: Étudiant pas inscrit à {session.subject.name}")
+        return jsonify({'success': False, 'message': f'Vous n\'êtes pas inscrit à la matière: {session.subject.name}'}), 403
     
     # Vérifier que l'étudiant est dans la bonne filière
     if session.subject.track_id != current_user.track_id:
+        print(f"DEBUG: Mauvaise filière. Session track: {session.subject.track_id}, User track: {current_user.track_id}")
         return jsonify({'success': False, 'message': 'Cette séance n\'est pas pour votre filière'}), 403
     
     # Vérifier si l'étudiant a déjà scanné pour cette session
@@ -87,6 +103,8 @@ def submit_scan():
     
     db.session.commit()
     
+    print(f"DEBUG: Présence enregistrée pour {current_user.email}")
+    
     return jsonify({
         'success': True, 
         'message': 'Présence enregistrée avec succès',
@@ -94,6 +112,7 @@ def submit_scan():
         'type': session.type,
         'date': session.date.strftime('%d/%m/%Y')
     })
+
 
 @student_bp.route('/subjects')
 @student_required

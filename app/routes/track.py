@@ -826,6 +826,14 @@ def session_qr(session_id):
             flash('Accès refusé.', 'danger')
             return redirect(url_for('track.dashboard'))
     
+    # Démarrer automatiquement la session si elle n'est pas active
+    if not session.is_active:
+        session.qr_code_token = secrets.token_urlsafe(32)
+        session.is_active = True
+        session.started_at = datetime.utcnow()
+        db.session.commit()
+        print(f"DEBUG: Session {session_id} démarrée automatiquement. Token: {session.qr_code_token}")
+    
     return render_template('track/session_qr.html', session=session, subject=session.subject)
 
 @track_bp.route('/session/<int:session_id>/refresh_token', methods=['POST'])
@@ -956,3 +964,5 @@ def view_attendances():
                              'type': session_type,
                              'date': date_filter
                          })
+ 
+ 

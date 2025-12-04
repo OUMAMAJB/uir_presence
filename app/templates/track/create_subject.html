@@ -66,6 +66,28 @@
                             class="appearance-none block w-full px-4 py-4 text-lg border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition">
                     </div>
 
+                    <!-- Academic Year Selection -->
+                    <div>
+                        <label for="academic_year" class="block text-sm font-bold text-gray-700 mb-3">
+                            <svg class="w-5 h-5 inline mr-2 text-primary" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            Année de formation <span class="text-red-500">*</span>
+                        </label>
+                        <select id="academic_year" name="academic_year" required
+                            class="block w-full px-4 py-4 text-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent rounded-xl">
+                            <option value="">-- Sélectionner une année --</option>
+                            <option value="1">1ère année</option>
+                            <option value="2">2ème année</option>
+                            <option value="3">3ème année</option>
+                            <option value="4">4ème année</option>
+                            <option value="5">5ème année</option>
+                        </select>
+                    </div>
+
                     <!-- Semester Selection -->
                     <div>
                         <label for="semester_id" class="block text-sm font-bold text-gray-700 mb-3">
@@ -77,11 +99,13 @@
                             </svg>
                             Semestre <span class="text-red-500">*</span>
                         </label>
-                        <select id="semester_id" name="semester_id" required
-                            class="block w-full px-4 py-4 text-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent rounded-xl">
-                            <option value="">-- Sélectionner un semestre --</option>
+                        <select id="semester_id" name="semester_id" required disabled
+                            class="block w-full px-4 py-4 text-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent rounded-xl disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">-- Sélectionnez d'abord une année --</option>
                             {% for semester in semesters %}
-                            <option value="{{ semester.id }}">
+                            <option value="{{ semester.id }}"
+                                data-year="{% if 'S1' in semester.name or 'S2' in semester.name %}1{% elif 'S3' in semester.name or 'S4' in semester.name %}2{% elif 'S5' in semester.name or 'S6' in semester.name %}3{% elif 'S7' in semester.name or 'S8' in semester.name %}4{% elif 'S9' in semester.name or 'S10' in semester.name %}5{% endif %}"
+                                style="display:none;">
                                 {{ semester.name }}
                             </option>
                             {% endfor %}
@@ -208,5 +232,39 @@
     document.getElementById('total_sessions_cm').addEventListener('input', updateTotal);
     document.getElementById('total_sessions_td').addEventListener('input', updateTotal);
     document.getElementById('total_sessions_tp').addEventListener('input', updateTotal);
+
+    // Cascade semester selection based on academic year
+    const yearSelect = document.getElementById('academic_year');
+    const semesterSelect = document.getElementById('semester_id');
+    const allSemesterOptions = Array.from(semesterSelect.querySelectorAll('option[data-year]'));
+
+    yearSelect.addEventListener('change', function () {
+        const selectedYear = this.value;
+
+        // Reset semester selection
+        semesterSelect.value = '';
+
+        // Hide all semester options
+        allSemesterOptions.forEach(option => {
+            option.style.display = 'none';
+        });
+
+        if (selectedYear) {
+            // Enable semester select
+            semesterSelect.disabled = false;
+            semesterSelect.querySelector('option[value=""]').textContent = '-- Sélectionner un semestre --';
+
+            // Show only semesters for selected year
+            allSemesterOptions.forEach(option => {
+                if (option.dataset.year === selectedYear) {
+                    option.style.display = 'block';
+                }
+            });
+        } else {
+            // Disable semester select if no year selected
+            semesterSelect.disabled = true;
+            semesterSelect.querySelector('option[value=""]').textContent = '-- Sélectionnez d\'abord une année --';
+        }
+    });
 </script>
 {% endblock %}

@@ -6,7 +6,7 @@ class Role(db.Model):
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False) # admin, admin_dept, admin_filiere, enseignant, etudiant
-    users = db.relationship('User', backref='role', lazy=True)
+    users = db.relationship('User', backref='role', lazy=True, cascade='all, delete-orphan')
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -25,8 +25,9 @@ class User(UserMixin, db.Model):
     academic_year = db.Column(db.Integer, nullable=True)  # 1, 2, 3, 4, 5...
 
     # Relationships
-    attendances = db.relationship('Attendance', backref='student', lazy=True)
+    attendances = db.relationship('Attendance', backref='student', lazy=True, cascade='all, delete-orphan')
     tracks_taught = db.relationship('Track', secondary='track_teachers', backref=db.backref('teachers', lazy=True))
+    department = db.relationship('Department', backref='users', foreign_keys=[department_id])
     
     def set_password(self, password):
         from werkzeug.security import generate_password_hash
@@ -102,7 +103,7 @@ class Department(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     head_id = db.Column(db.Integer, db.ForeignKey('users.id', use_alter=True, name='fk_dept_head'), nullable=True)
     
-    tracks = db.relationship('Track', backref='department', lazy=True)
+    tracks = db.relationship('Track', backref='department', lazy=True, cascade='all, delete-orphan')
     # Teachers are assigned to departments via User.department_id
 
 class Track(db.Model):
@@ -112,23 +113,27 @@ class Track(db.Model):
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
     head_id = db.Column(db.Integer, db.ForeignKey('users.id', use_alter=True, name='fk_track_head'), nullable=True)
     
-    subjects = db.relationship('Subject', backref='track', lazy=True)
+    subjects = db.relationship('Subject', backref='track', lazy=True, cascade='all, delete-orphan')
     students = db.relationship('User', backref='enrolled_track', lazy=True, foreign_keys=[User.track_id])
 
 class AcademicYear(db.Model):
     __tablename__ = 'academic_years'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20), unique=True, nullable=False) # e.g., "2023-2024"
+    name = db.Column(db.String(50), nullable=False) # e.g., "1ère Année", "2023-2024"
+    track_id = db.Column(db.Integer, db.ForeignKey('tracks.id'), nullable=True)
     
-    semesters = db.relationship('Semester', backref='academic_year', lazy=True)
+    track = db.relationship('Track', backref='academic_years')
+    semesters = db.relationship('Semester', backref='academic_year', lazy=True, cascade='all, delete-orphan')
 
 class Semester(db.Model):
     __tablename__ = 'semesters'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20), nullable=False) # S1, S2, etc.
     academic_year_id = db.Column(db.Integer, db.ForeignKey('academic_years.id'), nullable=False)
+    track_id = db.Column(db.Integer, db.ForeignKey('tracks.id'), nullable=True)
     
-    subjects = db.relationship('Subject', backref='semester', lazy=True)
+    subjects = db.relationship('Subject', backref='semester', lazy=True, cascade='all, delete-orphan')
+    track = db.relationship('Track', backref='semesters')
 
 class Subject(db.Model):
     __tablename__ = 'subjects'
@@ -143,7 +148,7 @@ class Subject(db.Model):
     total_sessions_tp = db.Column(db.Integer, default=0)
     
     # Relationships
-    sessions = db.relationship('Session', backref='subject', lazy=True)
+    sessions = db.relationship('Session', backref='subject', lazy=True, cascade='all, delete-orphan')
     
     # Many-to-Many for students enrolled in this subject
     students = db.relationship('User', secondary='enrollments', backref=db.backref('enrolled_subjects', lazy=True))
@@ -165,7 +170,7 @@ class Session(db.Model):
     started_at = db.Column(db.DateTime, nullable=True)  # Quand la séance a été démarrée
     stopped_at = db.Column(db.DateTime, nullable=True)  # Quand la séance a été arrêtée
     
-    attendances = db.relationship('Attendance', backref='session', lazy=True)
+    attendances = db.relationship('Attendance', backref='session', lazy=True, cascade='all, delete-orphan')
     teacher = db.relationship('User', backref='sessions_created', foreign_keys=[teacher_id])
 
 class Attendance(db.Model):
@@ -178,18 +183,18 @@ class Attendance(db.Model):
 
 # Association Tables
 enrollments = db.Table('enrollments',
-    db.Column('student_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-    db.Column('subject_id', db.Integer, db.ForeignKey('subjects.id'), primary_key=True)
+    db.Column('student_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('subject_id', db.Integer, db.ForeignKey('subjects.id', ondelete='CASCADE'), primary_key=True)
 )
 
 teaching_assignments = db.Table('teaching_assignments',
-    db.Column('teacher_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-    db.Column('subject_id', db.Integer, db.ForeignKey('subjects.id'), primary_key=True)
+    db.Column('teacher_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('subject_id', db.Integer, db.ForeignKey('subjects.id', ondelete='CASCADE'), primary_key=True)
 )
 
 track_teachers = db.Table('track_teachers',
-    db.Column('teacher_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-    db.Column('track_id', db.Integer, db.ForeignKey('tracks.id'), primary_key=True)
+    db.Column('teacher_id', db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('track_id', db.Integer, db.ForeignKey('tracks.id', ondelete='CASCADE'), primary_key=True)
 )
 
 import secrets

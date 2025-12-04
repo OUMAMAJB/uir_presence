@@ -3,7 +3,7 @@ import pymysql
 # Database credentials
 DB_HOST = 'localhost'
 DB_USER = 'root'
-DB_PASSWORD = ''
+DB_PASSWORD = 'MYSQL123'
 DB_NAME = 'uir_presence'
 
 try:

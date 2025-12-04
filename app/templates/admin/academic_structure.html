@@ -26,15 +26,24 @@
         <div class="mb-8 flex justify-between items-center">
             <div>
                 <h2 class="text-3xl font-bold text-primary">Structure Académique</h2>
-                <p class="text-gray-600">Gérer les années universitaires et les semestres</p>
+                <p class="text-gray-600">Gérer les années et semestres par filière</p>
             </div>
-            <button onclick="document.getElementById('modal-create-year').showModal()"
-                class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition shadow-md flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Nouvelle Année
-            </button>
+            <div class="flex space-x-3">
+                <button onclick="openCreateYearModal()"
+                    class="bg-white text-primary border border-primary px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Année Globale
+                </button>
+                <button onclick="openCreateYearModal('track')"
+                    class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition shadow-md flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Année par Filière
+                </button>
+            </div>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -48,92 +57,93 @@
         {% endif %}
         {% endwith %}
 
-        <div class="grid gap-8">
-            {% for year in years %}
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-800">{{ year.name }}</h3>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="openEditYearModal('{{ year.id }}', '{{ year.name }}')"
-                            class="text-blue-600 hover:text-blue-800 p-1" title="Modifier l'année">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                </path>
-                            </svg>
-                        </button>
-                        <form action="{{ url_for('admin.delete_academic_year', year_id=year.id) }}" method="POST"
-                            onsubmit="return confirm('Supprimer cette année académique ?');" class="inline">
-                            <button type="submit" class="text-red-600 hover:text-red-800 p-1" title="Supprimer l'année">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                    </path>
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Semestres</h4>
-                        <button onclick="openCreateSemesterModal('{{ year.id }}', '{{ year.name }}')"
-                            class="text-sm text-accent hover:text-highlight font-medium flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Ajouter Semestre
-                        </button>
-                    </div>
+        <!-- Structure Globale -->
+        <div class="mb-12">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <span class="bg-gray-200 text-gray-700 p-2 rounded-lg mr-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                </span>
+                Structure Globale (Années Calendaires)
+            </h3>
 
-                    {% if year.semesters %}
-                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {% for semester in year.semesters %}
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 flex justify-between items-center">
-                            <span class="font-medium text-gray-800">{{ semester.name }}</span>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="openEditSemesterModal('{{ semester.id }}', '{{ semester.name }}')"
-                                    class="text-blue-500 hover:text-blue-700">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                        </path>
-                                    </svg>
-                                </button>
-                                <form action="{{ url_for('admin.delete_semester', semester_id=semester.id) }}"
-                                    method="POST" onsubmit="return confirm('Supprimer ce semestre ?');" class="inline">
-                                    <button type="submit" class="text-red-500 hover:text-red-700">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                            </path>
-                                        </svg>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-gray-400 italic text-sm">Aucun semestre configuré pour cette année.</p>
-                    {% endif %}
-                </div>
+            {% if global_years %}
+            <div class="grid gap-6">
+                {% for year in global_years %}
+                {% include 'admin/_year_card.html' %}
+                {% endfor %}
             </div>
             {% else %}
-            <div class="text-center py-12 bg-white rounded-xl shadow-lg">
-                <p class="text-gray-500 mb-4">Aucune année académique configurée.</p>
-                <button onclick="document.getElementById('modal-create-year').showModal()"
-                    class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-secondary transition">
-                    Créer la première année
-                </button>
+            <div class="bg-white rounded-xl shadow p-6 text-center text-gray-500 italic">
+                Aucune année globale configurée.
             </div>
-            {% endfor %}
+            {% endif %}
         </div>
 
-        <div class="mt-8 text-center">
-            <a href="{{ url_for('admin.dashboard') }}" class="text-primary hover:text-secondary">&larr; Retour au
-                dashboard</a>
+        <!-- Structure par Filière -->
+        <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <span class="bg-secondary text-white p-2 rounded-lg mr-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                        </path>
+                    </svg>
+                </span>
+                Structure par Filière (Années de Formation)
+            </h3>
+
+            <div class="space-y-6">
+                {% for track in tracks %}
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition"
+                        onclick="toggleTrack('track-{{ track.id }}')">
+                        <div class="flex items-center">
+                            <span class="text-lg font-bold text-primary">{{ track.name }}</span>
+                            <span class="ml-2 text-sm text-gray-500">({{ track.department.name }})</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                                {{ track.academic_years|length }} année(s)
+                            </span>
+                            <svg id="arrow-track-{{ track.id }}"
+                                class="w-5 h-5 text-gray-400 transform transition-transform" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div id="track-{{ track.id }}" class="hidden p-6 bg-gray-50/50">
+                        <div class="flex justify-end mb-4">
+                            <button onclick="openCreateYearModal('track', '{{ track.id }}', '{{ track.name }}')"
+                                class="text-sm text-accent hover:text-highlight font-medium flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Ajouter Année pour {{ track.name }}
+                            </button>
+                        </div>
+
+                        {% if track.academic_years %}
+                        <div class="grid gap-4">
+                            {% for year in track.academic_years %}
+                            {% include 'admin/_year_card.html' %}
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-gray-400 italic text-sm text-center">Aucune structure définie pour cette filière.
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
@@ -142,11 +152,30 @@
 <!-- Créer Année -->
 <dialog id="modal-create-year" class="p-0 rounded-xl shadow-2xl backdrop:bg-gray-900/50">
     <div class="w-full max-w-md bg-white p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Nouvelle Année Académique</h3>
+        <h3 class="text-lg font-bold text-gray-900 mb-4" id="modal-year-title">Nouvelle Année Académique</h3>
         <form action="{{ url_for('admin.create_academic_year') }}" method="POST">
+            <input type="hidden" id="create-year-track-id" name="track_id">
+
+            <div class="mb-4" id="track-display-group" style="display: none;">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filière</label>
+                <input type="text" id="track-display-name" readonly
+                    class="w-full bg-gray-100 border-gray-300 rounded-lg shadow-sm text-gray-500 cursor-not-allowed">
+            </div>
+
+            <div class="mb-4" id="track-select-group" style="display: none;">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filière</label>
+                <select id="track-select" onchange="document.getElementById('create-year-track-id').value = this.value"
+                    class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary">
+                    <option value="">-- Sélectionner une filière --</option>
+                    {% for track in tracks %}
+                    <option value="{{ track.id }}">{{ track.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nom de l'année</label>
-                <input type="text" name="name" placeholder="Ex: 2024-2025" required
+                <input type="text" name="name" placeholder="Ex: 2024-2025 ou 1ère Année" required
                     class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary">
             </div>
             <div class="flex justify-end space-x-3">
@@ -162,7 +191,7 @@
 <!-- Modifier Année -->
 <dialog id="modal-edit-year" class="p-0 rounded-xl shadow-2xl backdrop:bg-gray-900/50">
     <div class="w-full max-w-md bg-white p-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Modifier Année Académique</h3>
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Modifier Année</h3>
         <form id="form-edit-year" method="POST">
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nom de l'année</label>
@@ -186,11 +215,29 @@
         <p id="create-semester-year-name" class="text-sm text-gray-500 mb-4"></p>
         <form action="{{ url_for('admin.create_semester') }}" method="POST">
             <input type="hidden" id="create-semester-year-id" name="year_id">
+            <!-- Track ID is inherited from year if year is track-specific, or selected here if year is global -->
+            <input type="hidden" id="create-semester-track-id" name="track_id">
+
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nom du semestre</label>
                 <input type="text" name="name" placeholder="Ex: Semestre 1" required
                     class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary">
             </div>
+
+            <!-- Sélection Filière (Seulement si l'année est globale) -->
+            <div class="mb-4" id="semester-track-select-group" style="display: none;">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filière (Optionnel)</label>
+                <p class="text-xs text-gray-500 mb-2">Laissez vide pour un semestre commun.</p>
+                <select id="semester-track-select"
+                    onchange="document.getElementById('create-semester-track-id').value = this.value"
+                    class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary">
+                    <option value="">-- Semestre Commun --</option>
+                    {% for track in tracks %}
+                    <option value="{{ track.id }}">{{ track.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="flex justify-end space-x-3">
                 <button type="button" onclick="document.getElementById('modal-create-semester').close()"
                     class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Annuler</button>
@@ -222,15 +269,75 @@
 </dialog>
 
 <script>
+    function toggleTrack(id) {
+        const element = document.getElementById(id);
+        const arrow = document.getElementById('arrow-' + id);
+        if (element.classList.contains('hidden')) {
+            element.classList.remove('hidden');
+            arrow.classList.add('rotate-180');
+        } else {
+            element.classList.add('hidden');
+            arrow.classList.remove('rotate-180');
+        }
+    }
+
+    function openCreateYearModal(type, trackId, trackName) {
+        const modal = document.getElementById('modal-create-year');
+        const title = document.getElementById('modal-year-title');
+        const trackInput = document.getElementById('create-year-track-id');
+        const trackDisplayGroup = document.getElementById('track-display-group');
+        const trackSelectGroup = document.getElementById('track-select-group');
+        const trackDisplayName = document.getElementById('track-display-name');
+        const trackSelect = document.getElementById('track-select');
+
+        // Reset
+        trackInput.value = '';
+        trackDisplayGroup.style.display = 'none';
+        trackSelectGroup.style.display = 'none';
+        trackSelect.value = '';
+
+        if (type === 'track') {
+            if (trackId) {
+                // Specific track
+                title.textContent = "Nouvelle Année pour " + trackName;
+                trackInput.value = trackId;
+                trackDisplayName.value = trackName;
+                trackDisplayGroup.style.display = 'block';
+            } else {
+                // Select track
+                title.textContent = "Nouvelle Année par Filière";
+                trackSelectGroup.style.display = 'block';
+            }
+        } else {
+            // Global
+            title.textContent = "Nouvelle Année Globale";
+        }
+
+        modal.showModal();
+    }
+
     function openEditYearModal(id, name) {
         document.getElementById('edit-year-name').value = name;
         document.getElementById('form-edit-year').action = "{{ url_for('admin.edit_academic_year', year_id=0) }}".replace('0', id);
         document.getElementById('modal-edit-year').showModal();
     }
 
-    function openCreateSemesterModal(yearId, yearName) {
+    function openCreateSemesterModal(yearId, yearName, isGlobal) {
         document.getElementById('create-semester-year-id').value = yearId;
         document.getElementById('create-semester-year-name').textContent = "Pour l'année : " + yearName;
+
+        const trackSelectGroup = document.getElementById('semester-track-select-group');
+        const trackInput = document.getElementById('create-semester-track-id');
+
+        if (isGlobal === 'True' || isGlobal === true) {
+            trackSelectGroup.style.display = 'block';
+            trackInput.value = ''; // Reset
+            document.getElementById('semester-track-select').value = '';
+        } else {
+            trackSelectGroup.style.display = 'none';
+            trackInput.value = ''; // Will be ignored or handled by backend as year is already track-specific
+        }
+
         document.getElementById('modal-create-semester').showModal();
     }
 

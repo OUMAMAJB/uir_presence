@@ -62,29 +62,59 @@ def edit_department(dept_id):
 @admin_bp.route('/department/<int:dept_id>/delete', methods=['POST'])
 @super_admin_required
 def delete_department(dept_id):
-    """Supprimer un département"""
-    from app.models import Track
+    """Supprimer un département avec tout son contenu"""
+    from app.models import Track, Subject, Session, Attendance
+    from sqlalchemy import text
     
     department = Department.query.get_or_404(dept_id)
-    
-    # Vérifier s'il y a des filières
-    tracks_count = Track.query.filter_by(department_id=dept_id).count()
-    if tracks_count > 0:
-        flash(f'Impossible de supprimer le département. {tracks_count} filière(s) y sont associées.', 'danger')
-        return redirect(url_for('admin.dashboard'))
-    
-    # Vérifier s'il y a des enseignants
-    teacher_role = Role.query.filter_by(name='enseignant').first()
-    teachers_count = User.query.filter_by(department_id=dept_id, role_id=teacher_role.id).count() if teacher_role else 0
-    if teachers_count > 0:
-        flash(f'Impossible de supprimer le département. {teachers_count} enseignant(s) y sont assignés.', 'danger')
-        return redirect(url_for('admin.dashboard'))
-    
     dept_name = department.name
-    db.session.delete(department)
+    
+    # Retirer le chef de département d'abord
+    if department.head_id:
+        old_head = User.query.get(department.head_id)
+        if old_head:
+            teacher_role = Role.query.filter_by(name='enseignant').first()
+            if teacher_role:
+                old_head.role = teacher_role
+        department.head_id = None
+        db.session.commit()
+    
+    # Compter ce qui sera supprimé
+    tracks = Track.query.filter_by(department_id=dept_id).all()
+    track_ids = [t.id for t in tracks]
+    tracks_count = len(tracks)
+    
+    subjects_count = 0
+    sessions_count = 0
+    attendances_count = 0
+    
+    if track_ids:
+        subjects = Subject.query.filter(Subject.track_id.in_(track_ids)).all()
+        subject_ids = [sub.id for sub in subjects]
+        subjects_count = len(subjects)
+        
+        if subject_ids:
+            sessions = Session.query.filter(Session.subject_id.in_(subject_ids)).all()
+            session_ids = [sess.id for sess in sessions]
+            sessions_count = len(sessions)
+            
+            if session_ids:
+                attendances_count = Attendance.query.filter(Attendance.session_id.in_(session_ids)).count()
+    
+    # Retirer les enseignants du département (ne pas les supprimer)
+    db.session.execute(text("UPDATE users SET department_id = NULL WHERE department_id = :dept_id"), {"dept_id": dept_id})
+    
+    # Supprimer les chefs de filière de ce département
+    for track in tracks:
+        if track.head_id:
+            track.head_id = None
     db.session.commit()
     
-    flash(f'Département "{dept_name}" supprimé avec succès.', 'success')
+    # Supprimer le département (cascade supprimera filières, matières, sessions, présences)
+    db.session.execute(text("DELETE FROM departments WHERE id = :dept_id"), {"dept_id": dept_id})
+    db.session.commit()
+    
+    flash(f'Département "{dept_name}" supprimé avec {tracks_count} filière(s), {subjects_count} matière(s), {sessions_count} session(s) et {attendances_count} présence(s).', 'success')
     return redirect(url_for('admin.dashboard'))
 
 @admin_bp.route('/department/<int:dept_id>/assign-head', methods=['POST'])
@@ -347,39 +377,54 @@ def edit_track(track_id):
 @admin_bp.route('/track/<int:track_id>/delete', methods=['POST'])
 @super_admin_required
 def delete_track(track_id):
-    """Supprimer une filière"""
-    from app.models import Track, Subject
+    """Supprimer une filière avec tout son contenu"""
+    from app.models import Track, Subject, Session, Attendance
+    from sqlalchemy import text
     
     track = Track.query.get_or_404(track_id)
-    
-    # Vérifier s'il y a des matières associées
-    subjects_count = Subject.query.filter_by(track_id=track_id).count()
-    if subjects_count > 0:
-        flash(f'Impossible de supprimer la filière. {subjects_count} matière(s) y sont associées.', 'danger')
-        return redirect(url_for('admin.view_tracks'))
-    
-    # Vérifier s'il y a des étudiants inscrits
-    student_role = Role.query.filter_by(name='etudiant').first()
-    students_count = User.query.filter_by(track_id=track_id, role_id=student_role.id).count() if student_role else 0
-    if students_count > 0:
-        flash(f'Impossible de supprimer la filière. {students_count} étudiant(s) y sont inscrits.', 'danger')
-        return redirect(url_for('admin.view_tracks'))
-    
-    # Vérifier si la filière a un chef
-    if track.head_id:
-        # Rétrograder le chef au rôle enseignant
-        old_head = User.query.get(track.head_id)
-        if old_head:
-            teacher_role = Role.query.filter_by(name='enseignant').first()
-            if teacher_role:
-                old_head.role = teacher_role
-    
     track_name = track.name
     dept_name = track.department.name
-    db.session.delete(track)
+    
+    # Rétrograder le chef au rôle enseignant si nécessaire
+    if track.head_id:
+        old_head = User.query.get(track.head_id)
+        if old_head:
+            # Vérifier s'il est encore chef d'autres filières
+            other_tracks = Track.query.filter(Track.head_id == old_head.id, Track.id != track_id).count()
+            if other_tracks == 0 and old_head.role.name == 'admin_filiere':
+                teacher_role = Role.query.filter_by(name='enseignant').first()
+                if teacher_role:
+                    old_head.role = teacher_role
+        track.head_id = None
+        db.session.commit()
+    
+    # Compter ce qui sera supprimé
+    subjects = Subject.query.filter_by(track_id=track_id).all()
+    subject_ids = [sub.id for sub in subjects]
+    subjects_count = len(subjects)
+    
+    sessions_count = 0
+    attendances_count = 0
+    
+    if subject_ids:
+        sessions = Session.query.filter(Session.subject_id.in_(subject_ids)).all()
+        session_ids = [sess.id for sess in sessions]
+        sessions_count = len(sessions)
+        
+        if session_ids:
+            attendances_count = Attendance.query.filter(Attendance.session_id.in_(session_ids)).count()
+    
+    # Compter et retirer les étudiants de la filière (ne pas les supprimer)
+    student_role = Role.query.filter_by(name='etudiant').first()
+    students_count = User.query.filter_by(track_id=track_id, role_id=student_role.id).count() if student_role else 0
+    
+    db.session.execute(text("UPDATE users SET track_id = NULL WHERE track_id = :track_id"), {"track_id": track_id})
+    
+    # Supprimer la filière (cascade supprimera matières, sessions, présences)
+    db.session.execute(text("DELETE FROM tracks WHERE id = :track_id"), {"track_id": track_id})
     db.session.commit()
     
-    flash(f'Filière "{track_name}" du département {dept_name} supprimée avec succès.', 'success')
+    flash(f'Filière "{track_name}" ({dept_name}) supprimée avec {subjects_count} matière(s), {sessions_count} session(s), {attendances_count} présence(s). {students_count} étudiant(s) ont été désinscrits.', 'success')
     return redirect(url_for('admin.view_tracks'))
 
 @admin_bp.route('/track/<int:track_id>/assign-head', methods=['POST'])
@@ -449,10 +494,12 @@ def assign_track_head(track_id):
 @super_admin_required
 def view_academic_structure():
     """Vue d'ensemble de la structure académique"""
-    from app.models import AcademicYear, Semester
+    from app.models import AcademicYear, Semester, Track
     
-    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
-    return render_template('admin/academic_structure.html', years=years)
+    tracks = Track.query.order_by(Track.name).all()
+    global_years = AcademicYear.query.filter(AcademicYear.track_id.is_(None)).order_by(AcademicYear.name.desc()).all()
+    
+    return render_template('admin/academic_structure.html', tracks=tracks, global_years=global_years)
 
 @admin_bp.route('/academic-year/create', methods=['POST'])
 @super_admin_required
@@ -460,15 +507,30 @@ def create_academic_year():
     from app.models import AcademicYear
     
     name = request.form.get('name')
+    track_id = request.form.get('track_id')
+    
     if not name:
         flash('Le nom de l\'année est requis.', 'warning')
         return redirect(url_for('admin.view_academic_structure'))
+    
+    # Convert track_id
+    if track_id and track_id.isdigit():
+        track_id = int(track_id)
+    else:
+        track_id = None
         
-    if AcademicYear.query.filter_by(name=name).first():
-        flash('Cette année académique existe déjà.', 'warning')
+    # Check uniqueness (name + track_id)
+    query = AcademicYear.query.filter_by(name=name)
+    if track_id:
+        query = query.filter_by(track_id=track_id)
+    else:
+        query = query.filter(AcademicYear.track_id.is_(None))
+        
+    if query.first():
+        flash('Cette année académique existe déjà pour cette configuration.', 'warning')
         return redirect(url_for('admin.view_academic_structure'))
         
-    year = AcademicYear(name=name)
+    year = AcademicYear(name=name, track_id=track_id)
     db.session.add(year)
     db.session.commit()
     
@@ -501,19 +563,38 @@ def edit_academic_year(year_id):
 @admin_bp.route('/academic-year/<int:year_id>/delete', methods=['POST'])
 @super_admin_required
 def delete_academic_year(year_id):
-    from app.models import AcademicYear, Semester
+    from app.models import AcademicYear, Semester, Subject, Session, Attendance
+    from sqlalchemy import text
     
     year = AcademicYear.query.get_or_404(year_id)
+    year_name = year.name
     
-    # Vérifier s'il y a des semestres
-    if year.semesters:
-        flash(f'Impossible de supprimer. Cette année contient {len(year.semesters)} semestre(s).', 'danger')
-        return redirect(url_for('admin.view_academic_structure'))
+    # Compter ce qui sera supprimé pour le message de confirmation
+    semesters = Semester.query.filter_by(academic_year_id=year_id).all()
+    semester_ids = [s.id for s in semesters]
+    
+    subjects_count = 0
+    sessions_count = 0
+    attendances_count = 0
+    
+    if semester_ids:
+        subjects = Subject.query.filter(Subject.semester_id.in_(semester_ids)).all()
+        subject_ids = [sub.id for sub in subjects]
+        subjects_count = len(subjects)
         
-    db.session.delete(year)
+        if subject_ids:
+            sessions = Session.query.filter(Session.subject_id.in_(subject_ids)).all()
+            session_ids = [sess.id for sess in sessions]
+            sessions_count = len(sessions)
+            
+            if session_ids:
+                attendances_count = Attendance.query.filter(Attendance.session_id.in_(session_ids)).count()
+    
+    # Supprimer en cascade via SQL brut (la DB a les contraintes CASCADE)
+    db.session.execute(text("DELETE FROM academic_years WHERE id = :year_id"), {"year_id": year_id})
     db.session.commit()
     
-    flash('Année académique supprimée avec succès.', 'success')
+    flash(f'Année "{year_name}" supprimée avec {len(semesters)} semestre(s), {subjects_count} matière(s), {sessions_count} session(s) et {attendances_count} présence(s).', 'success')
     return redirect(url_for('admin.view_academic_structure'))
 
 @admin_bp.route('/semester/create', methods=['POST'])
@@ -523,6 +604,7 @@ def create_semester():
     
     name = request.form.get('name')
     year_id = request.form.get('year_id')
+    track_id = request.form.get('track_id')
     
     if not name or not year_id:
         flash('Nom et année académique requis.', 'warning')
@@ -532,17 +614,35 @@ def create_semester():
     if not year:
         flash('Année académique introuvable.', 'danger')
         return redirect(url_for('admin.view_academic_structure'))
+    
+    # Convert track_id to int or None
+    if track_id and track_id.isdigit():
+        track_id = int(track_id)
+    else:
+        track_id = None
         
-    # Vérifier unicité dans l'année
-    if Semester.query.filter_by(name=name, academic_year_id=year_id).first():
-        flash(f'Le semestre "{name}" existe déjà pour l\'année {year.name}.', 'warning')
+    # Vérifier unicité dans l'année (et filière si spécifiée)
+    query = Semester.query.filter_by(name=name, academic_year_id=year_id)
+    if track_id:
+        query = query.filter_by(track_id=track_id)
+    else:
+        query = query.filter(Semester.track_id.is_(None))
+        
+    if query.first():
+        flash(f'Le semestre "{name}" existe déjà pour cette configuration.', 'warning')
         return redirect(url_for('admin.view_academic_structure'))
         
-    semester = Semester(name=name, academic_year_id=year_id)
+    semester = Semester(name=name, academic_year_id=year_id, track_id=track_id)
     db.session.add(semester)
     db.session.commit()
     
-    flash(f'Semestre "{name}" ajouté à l\'année {year.name}.', 'success')
+    msg = f'Semestre "{name}" ajouté à l\'année {year.name}'
+    if track_id:
+        from app.models import Track
+        track = Track.query.get(track_id)
+        msg += f' (Filière: {track.name})'
+    
+    flash(msg + '.', 'success')
     return redirect(url_for('admin.view_academic_structure'))
 
 @admin_bp.route('/semester/<int:semester_id>/edit', methods=['POST'])
@@ -571,31 +671,46 @@ def edit_semester(semester_id):
 @admin_bp.route('/semester/<int:semester_id>/delete', methods=['POST'])
 @super_admin_required
 def delete_semester(semester_id):
-    from app.models import Semester, Subject
+    from app.models import Semester, Subject, Session, Attendance
+    from sqlalchemy import text
     
     semester = Semester.query.get_or_404(semester_id)
+    semester_name = semester.name
+    year_name = semester.academic_year.name
     
-    # Vérifier s'il y a des matières
-    subjects_count = Subject.query.filter_by(semester_id=semester_id).count()
-    if subjects_count > 0:
-        flash(f'Impossible de supprimer. {subjects_count} matière(s) sont associées à ce semestre.', 'danger')
-        return redirect(url_for('admin.view_academic_structure'))
+    # Compter ce qui sera supprimé
+    subjects = Subject.query.filter_by(semester_id=semester_id).all()
+    subject_ids = [sub.id for sub in subjects]
+    subjects_count = len(subjects)
+    
+    sessions_count = 0
+    attendances_count = 0
+    
+    if subject_ids:
+        sessions = Session.query.filter(Session.subject_id.in_(subject_ids)).all()
+        session_ids = [sess.id for sess in sessions]
+        sessions_count = len(sessions)
         
-    db.session.delete(semester)
+        if session_ids:
+            attendances_count = Attendance.query.filter(Attendance.session_id.in_(session_ids)).count()
+    
+    # Supprimer en cascade via SQL brut
+    db.session.execute(text("DELETE FROM semesters WHERE id = :semester_id"), {"semester_id": semester_id})
     db.session.commit()
     
-    flash('Semestre supprimé avec succès.', 'success')
+    flash(f'Semestre "{semester_name}" ({year_name}) supprimé avec {subjects_count} matière(s), {sessions_count} session(s) et {attendances_count} présence(s).', 'success')
     return redirect(url_for('admin.view_academic_structure'))
 
 @admin_bp.route('/subject/create', methods=['GET', 'POST'])
 @super_admin_required
 def create_subject():
     """Super Admin crée une matière en choisissant la filière"""
-    from app.models import Track, Subject, Semester
+    from app.models import Track, Subject, Semester, AcademicYear
     
     departments = Department.query.all()
     tracks = Track.query.all()
-    semesters = Semester.query.all()
+    semesters = Semester.query.join(AcademicYear).order_by(AcademicYear.name.desc(), Semester.name).all()
+    academic_years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
     
     if request.method == 'POST':
         name = request.form.get('name')
@@ -628,7 +743,7 @@ def create_subject():
         flash(f'Matière "{name}" créée avec succès dans la filière {track.name}.')
         return redirect(url_for('admin.view_subjects'))
         
-    return render_template('admin/create_subject.html', departments=departments, tracks=tracks, semesters=semesters)
+    return render_template('admin/create_subject.html', departments=departments, tracks=tracks, semesters=semesters, academic_years=academic_years)
 
 @admin_bp.route('/subjects')
 @super_admin_required
@@ -700,7 +815,8 @@ def delete_subject(subject_id):
 @super_admin_required
 def assign_subject_teachers(subject_id):
     """Assigner des enseignants à une matière"""
-    from app.models import Subject, TeachingAssignment
+    from app.models import Subject
+    from sqlalchemy import text
     
     subject = Subject.query.get_or_404(subject_id)
     
@@ -725,13 +841,15 @@ def assign_subject_teachers(subject_id):
         selected_teacher_ids = request.form.getlist('teacher_ids')
         selected_teacher_ids = [int(id) for id in selected_teacher_ids]
         
-        # Mettre à jour les assignations
-        # On supprime tout et on recrée (approche simple)
-        TeachingAssignment.query.filter_by(subject_id=subject_id).delete()
+        # Supprimer toutes les assignations existantes
+        db.session.execute(text("DELETE FROM teaching_assignments WHERE subject_id = :subject_id"), {"subject_id": subject_id})
         
+        # Ajouter les nouvelles assignations
         for teacher_id in selected_teacher_ids:
-            assignment = TeachingAssignment(subject_id=subject_id, teacher_id=teacher_id)
-            db.session.add(assignment)
+            db.session.execute(
+                text("INSERT INTO teaching_assignments (teacher_id, subject_id) VALUES (:teacher_id, :subject_id)"),
+                {"teacher_id": teacher_id, "subject_id": subject_id}
+            )
             
         db.session.commit()
         flash('Affectation des enseignants mise à jour.', 'success')
@@ -848,6 +966,7 @@ def edit_teacher(teacher_id):
 def delete_teacher(teacher_id):
     """Supprimer un enseignant"""
     from app.models import Session, Track
+    from sqlalchemy import text
     
     teacher = User.query.get_or_404(teacher_id)
     
@@ -870,7 +989,18 @@ def delete_teacher(teacher_id):
         return redirect(url_for('admin.view_teachers'))
     
     teacher_name = f'{teacher.first_name} {teacher.last_name}'
-    db.session.delete(teacher)
+    
+    # Supprimer les tokens de réinitialisation AVANT de toucher à l'utilisateur (via SQL brut)
+    db.session.execute(text("DELETE FROM password_reset_tokens WHERE user_id = :user_id"), {"user_id": teacher_id})
+    
+    # Supprimer les assignations d'enseignement
+    db.session.execute(text("DELETE FROM teaching_assignments WHERE teacher_id = :teacher_id"), {"teacher_id": teacher_id})
+    
+    # Supprimer les associations track_teachers
+    db.session.execute(text("DELETE FROM track_teachers WHERE teacher_id = :teacher_id"), {"teacher_id": teacher_id})
+    
+    # Maintenant supprimer l'utilisateur
+    db.session.execute(text("DELETE FROM users WHERE id = :user_id"), {"user_id": teacher_id})
     db.session.commit()
     
     flash(f'Enseignant "{teacher_name}" supprimé avec succès.', 'success')

@@ -3,7 +3,6 @@
 {% block title %}Mes Matières - UIR Presence{% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
     <div class="container mx-auto px-4">
         <!-- Header -->
@@ -20,7 +19,97 @@
             <p class="text-gray-600">{{ current_user.track.name if current_user.track else 'Aucune filière' }}</p>
         </div>
 
-        {% if subject_stats %}
+        {% if subjects_by_semester %}
+        <div class="space-y-8">
+            {% for semester_name, subject_stats in subjects_by_semester %}
+            <div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">{{ semester_name }}</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    {% for item in subject_stats %}
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                        <div class="bg-gradient-to-r from-primary to-secondary p-6">
+                            <h2 class="text-2xl font-bold text-white mb-1">{{ item.subject.name }}</h2>
+                            <p class="text-white opacity-90">{{ item.subject.semester.name }}</p>
+                        </div>
+
+                        <div class="p-6">
+                            <!-- Statut -->
+                            <div class="mb-6 flex justify-between items-center">
+                                <span class="text-lg font-semibold text-gray-700">Statut:</span>
+                                <span
+                                    class="px-4 py-2 text-sm font-bold rounded-full {% if item.stats.status == 'Rattrapage' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                                    {{ item.stats.status }}
+                                </span>
+                            </div>
+
+                            <!-- Statistiques globales -->
+                            <div class="mb-6">
+                                <h3 class="text-sm font-semibold text-gray-600 mb-3">Assiduité globale</h3>
+                                <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                    <span>Taux de présence</span>
+                                    <span
+                                        class="font-bold {% if item.stats.absence_percentage >= 25 %}text-red-600{% else %}text-green-600{% endif %}">
+                                        {{ 100 - item.stats.absence_percentage }}%
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="{% if item.stats.absence_percentage >= 25 %}bg-red-500{% else %}bg-green-500{% endif %} h-3 rounded-full transition-all"
+                                        style="width: {{ 100 - item.stats.absence_percentage }}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Statistiques détaillées -->
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                                    <p class="text-3xl font-bold text-blue-600">{{ item.stats.total_sessions }}</p>
+                                    <p class="text-sm text-gray-600">Sessions réalisées</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <p class="text-3xl font-bold text-gray-600">{{ item.stats.remaining_sessions }}</p>
+                                    <p class="text-sm text-gray-600">Sessions restantes</p>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded-lg text-center">
+                                    <p class="text-3xl font-bold text-green-600">{{ item.stats.present_count }}</p>
+                                    <p class="text-sm text-gray-600">Présences</p>
+                                </div>
+                                <div class="bg-red-50 p-4 rounded-lg text-center">
+                                    <p class="text-3xl font-bold text-red-600">{{ item.stats.absent_count }}</p>
+                                    <p class="text-sm text-gray-600">Absences</p>
+                                </div>
+                            </div>
+
+                            <!-- Détails des absences -->
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded">
+                                <p class="text-sm font-semibold text-yellow-800 mb-2">Détails des absences:</p>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                        <span class="text-yellow-700">CM + TD:</span>
+                                        <span class="font-bold text-yellow-900 ml-1">{{ item.stats.cm_td_absences
+                                            }}</span>
+                                        <span class="text-xs text-yellow-600">(limite: 25%)</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-yellow-700">TP:</span>
+                                        <span class="font-bold text-yellow-900 ml-1">{{ item.stats.tp_absences }}</span>
+                                        <span class="text-xs text-yellow-600">(limite: 2)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bouton historique -->
+                            <a href="{{ url_for('student.subject_history', subject_id=item.subject.id) }}"
+                                class="block w-full text-center bg-primary hover:bg-secondary text-white font-semibold py-3 rounded-lg transition-colors">
+                                Voir l'historique détaillé
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% elif subject_stats %}
+        <!-- Fallback for simple list (if subjects_by_semester is not available) -->
         <div class="grid md:grid-cols-2 gap-6">
             {% for item in subject_stats %}
             <div class="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -30,7 +119,6 @@
                 </div>
 
                 <div class="p-6">
-                    <!-- Statut -->
                     <div class="mb-6 flex justify-between items-center">
                         <span class="text-lg font-semibold text-gray-700">Statut:</span>
                         <span
@@ -39,241 +127,15 @@
                         </span>
                     </div>
 
-                    <!-- Statistiques globales -->
-                    <div class="mb-6">
-                        <h3 class="text-sm font-semibold text-gray-600 mb-3">Assiduité globale</h3>
-                        <div class="flex justify-between text-sm text-gray-600 mb-2">
-                            <span>Taux de présence</span>
-                            <span
-                                class="font-bold {% if item.stats.absence_percentage >= 25 %}text-red-600{% else %}text-green-600{% endif %}">
-                                {{ 100 - item.stats.absence_percentage }}%
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-3">
-                            <div class="{% if item.stats.absence_percentage >= 25 %}bg-red-500{% else %}bg-green-500{% endif %} h-3 rounded-full transition-all"
-                                style="width: {{ 100 - item.stats.absence_percentage }}%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Statistiques détaillées -->
-                    <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="bg-blue-50 p-4 rounded-lg text-center">
-                            <p class="text-3xl font-bold text-blue-600">{{ item.stats.total_sessions }}</p>
-                            <p class="text-sm text-gray-600">Sessions réalisées</p>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg text-center">
-                            <p class="text-3xl font-bold text-gray-600">{{ item.stats.remaining_sessions }}</p>
-                            <p class="text-sm text-gray-600">Sessions restantes</p>
-                        </div>
-                        <div class="bg-green-50 p-4 rounded-lg text-center">
-                            <p class="text-3xl font-bold text-green-600">{{ item.stats.present_count }}</p>
-                            <p class="text-sm text-gray-600">Présences</p>
-                        </div>
-                        <div class="bg-red-50 p-4 rounded-lg text-center">
-                            <p class="text-3xl font-bold text-red-600">{{ item.stats.absent_count }}</p>
-                            <p class="text-sm text-gray-600">Absences</p>
-                        </div>
-                    </div>
-
-                    <!-- Détails des absences -->
-                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded">
-                        <p class="text-sm font-semibold text-yellow-800 mb-2">Détails des absences:</p>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                                <span class="text-yellow-700">CM + TD:</span>
-                                <span class="font-bold text-yellow-900 ml-1">{{ item.stats.cm_td_absences }}</span>
-                                <span class="text-xs text-yellow-600">(limite: 25%)</span>
-                            </div>
-                            <div>
-                                <span class="text-yellow-700">TP:</span>
-                                <span class="font-bold text-yellow-900 ml-1">{{ item.stats.tp_absences }}</span>
-                                <span class="text-xs text-yellow-600">(limite: 2)</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bouton historique -->
                     <a href="{{ url_for('student.subject_history', subject_id=item.subject.id) }}"
                         class="block w-full text-center bg-primary hover:bg-secondary text-white font-semibold py-3 rounded-lg transition-colors">
                         Voir l'historique détaillé
                     </a>
-=======
-<div class="min-h-screen bg-gray-50">
-    <!-- Navbar -->
-    <nav class="bg-gradient-to-r from-primary to-secondary shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-white">UIR Presence</h1>
-                    <span
-                        class="ml-4 px-3 py-1 bg-white text-primary text-sm font-semibold rounded-full">Étudiant</span>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('student.dashboard') }}"
-                        class="text-white hover:text-light transition-colors duration-200">
-                        Dashboard
-                    </a>
-                    <span class="text-white">{{ current_user.first_name }} {{ current_user.last_name }}</span>
-                    <a href="{{ url_for('auth.logout') }}"
-                        class="bg-white text-primary px-4 py-2 rounded-lg hover:bg-light transition-colors duration-200">
-                        Logout
-                    </a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-primary mb-2">Mes Matières</h2>
-            <p class="text-gray-600">Détails de vos cours et statistiques de présence</p>
-        </div>
-
-        {% if subjects_by_semester %}
-        <div class="space-y-12">
-            {% for semester_name, subject_stats in subjects_by_semester %}
-            <div>
-                <h3 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">{{ semester_name }}</h3>
-                <div class="space-y-6">
-                    {% for stat in subject_stats %}
-                    <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                        <div
-                            class="border-l-4 {% if stat.stats.status == 'Rattrapage' %}border-red-500{% else %}border-green-500{% endif %} p-6">
-                            <div class="flex justify-between items-start mb-6">
-                                <div>
-                                    <h3 class="text-2xl font-bold text-gray-900 mb-1">{{ stat.subject.name }}</h3>
-                                    <p class="text-sm text-gray-500">
-                                        {{ stat.subject.track.name }}
-                                    </p>
-                                </div>
-                                <span
-                                    class="px-4 py-2 text-sm font-bold rounded-full {% if stat.stats.status == 'Rattrapage' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
-                                    {{ stat.stats.status }}
-                                </span>
-                            </div>
-
-                            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                                <!-- Total Sessions -->
-                                <div class="bg-gray-50 p-4 rounded-lg">
-                                    <div class="text-sm text-gray-600 mb-1">Séances effectuées</div>
-                                    <div class="text-3xl font-bold text-gray-900">{{ stat.stats.total_sessions }}</div>
-                                    <div class="text-xs text-gray-500 mt-1">sur {{ stat.stats.total_planned }}
-                                        planifiées</div>
-                                </div>
-
-                                <!-- Présences -->
-                                <div class="bg-green-50 p-4 rounded-lg">
-                                    <div class="text-sm text-green-700 mb-1">Présences</div>
-                                    <div class="text-3xl font-bold text-green-800">{{ stat.stats.present_count }}</div>
-                                    <div class="text-xs text-green-600 mt-1">
-                                        {{ ((stat.stats.present_count / stat.stats.total_sessions * 100) if
-                                        stat.stats.total_sessions > 0 else 0) | round(1) }}% de présence
-                                    </div>
-                                </div>
-
-                                <!-- Absences -->
-                                <div class="bg-red-50 p-4 rounded-lg">
-                                    <div class="text-sm text-red-700 mb-1">Absences</div>
-                                    <div class="text-3xl font-bold text-red-800">{{ stat.stats.absent_count }}</div>
-                                    <div class="text-xs text-red-600 mt-1">{{ stat.stats.absence_percentage }}%
-                                        d'absence</div>
-                                </div>
-
-                                <!-- Remaining -->
-                                <div class="bg-blue-50 p-4 rounded-lg">
-                                    <div class="text-sm text-blue-700 mb-1">Séances restantes</div>
-                                    <div class="text-3xl font-bold text-blue-800">{{ stat.stats.remaining_sessions }}
-                                    </div>
-                                    <div class="text-xs text-blue-600 mt-1">À venir</div>
-                                </div>
-                            </div>
-
-                            <!-- Progress Bar -->
-                            <div class="mb-6">
-                                <div class="flex justify-between text-sm text-gray-600 mb-2">
-                                    <span>Taux de présence</span>
-                                    <span class="font-bold">{{ 100 - stat.stats.absence_percentage }}%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-4">
-                                    <div class="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-500"
-                                        style="width: {{ 100 - stat.stats.absence_percentage }}%"></div>
-                                </div>
-                            </div>
-
-                            <!-- Session Type Breakdown -->
-                            <div class="grid grid-cols-3 gap-4 mb-6">
-                                <!-- CM -->
-                                <div class="text-center p-3 bg-purple-50 rounded-lg">
-                                    <div class="text-xs text-purple-600 font-semibold mb-1">CM</div>
-                                    <div class="text-sm text-purple-900">
-                                        Total: {{ stat.subject.total_sessions_cm }}
-                                    </div>
-                                </div>
-
-                                <!-- TD -->
-                                <div class="text-center p-3 bg-blue-50 rounded-lg">
-                                    <div class="text-xs text-blue-600 font-semibold mb-1">TD</div>
-                                    <div class="text-sm text-blue-900">
-                                        Total: {{ stat.subject.total_sessions_td }}
-                                    </div>
-                                </div>
-
-                                <!-- TP -->
-                                <div class="text-center p-3 bg-orange-50 rounded-lg">
-                                    <div class="text-xs text-orange-600 font-semibold mb-1">TP</div>
-                                    <div class="text-sm text-orange-900">
-                                        Total: {{ stat.subject.total_sessions_tp }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Rattrapage Warning -->
-                            {% if stat.stats.status == 'Rattrapage' %}
-                            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clip-rule="evenodd"></path>
-                                    </svg>
-                                    <div>
-                                        <p class="font-bold text-red-800">Statut Rattrapage</p>
-                                        <p class="text-sm text-red-700">
-                                            {% if stat.stats.cm_td_absences > 0 %}
-                                            Absences CM+TD: {{ stat.stats.cm_td_absences }}
-                                            {% endif %}
-                                            {% if stat.stats.tp_absences >= 2 %}
-                                            | Absences TP: {{ stat.stats.tp_absences }}
-                                            {% endif %}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endif %}
-
-                            <!-- View Details Button -->
-                            <div class="text-right">
-                                <a href="{{ url_for('student.subject_history', subject_id=stat.subject.id) }}"
-                                    class="inline-flex items-center px-4 py-2 bg-primary hover:bg-secondary text-white font-semibold rounded-lg transition-colors duration-200">
-                                    Voir l'historique détaillé
-                                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5l7 7-7 7">
-                                        </path>
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
->>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-<<<<<<< HEAD
         <div class="bg-white rounded-xl shadow-lg p-12 text-center">
             <svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -281,15 +143,6 @@
             </svg>
             <h3 class="text-2xl font-bold text-gray-400 mb-2">Aucune matière trouvée</h3>
             <p class="text-gray-500">Vous n'êtes inscrit à aucune matière pour le moment.</p>
-=======
-        <div class="text-center py-20 bg-white rounded-xl shadow-lg">
-            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                </path>
-            </svg>
-            <p class="text-gray-500 text-lg">Vous n'êtes inscrit à aucun cours pour le moment.</p>
->>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
         </div>
         {% endif %}
     </div>

@@ -48,9 +48,15 @@
                 if (data.success) {
                     resultDiv.className = "mt-4 p-4 rounded-lg text-center font-bold bg-green-100 text-green-800";
                     resultDiv.innerHTML = `
+<<<<<<< HEAD
                         <p class="text-xl mb-2">${data.message}</p>
                         <p class="text-sm"><strong>${data.subject}</strong> - ${data.type}</p>
                         <p class="text-sm">${data.date}</p>
+=======
+                        <div class="text-lg mb-2">✓ ${data.message}</div>
+                        <div class="text-sm">${data.subject} - ${data.type}</div>
+                        <div class="text-xs mt-1">${data.date}</div>
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                     `;
                     // Redirect after 3 seconds
                     setTimeout(() => {
@@ -60,11 +66,19 @@
                     resultDiv.className = "mt-4 p-4 rounded-lg text-center font-bold bg-red-100 text-red-800";
                     resultDiv.innerText = data.message || "Erreur lors de l'enregistrement";
 
+<<<<<<< HEAD
                     // Allow retry after 3 seconds
                     setTimeout(() => {
                         resultDiv.classList.add('hidden');
                         html5QrcodeScanner.render(onScanSuccess, onScanFailure);
                     }, 3000);
+=======
+                    // Allow retry after 2 seconds
+                    setTimeout(() => {
+                        resultDiv.classList.add('hidden');
+                        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+                    }, 2000);
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                 }
             })
             .catch(error => {
@@ -77,7 +91,11 @@
     }
 
     function onScanFailure(error) {
+<<<<<<< HEAD
         // Ignore scan failures and keep scanning
+=======
+        // Ignore scan failures, keep scanning
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
     }
 
     let html5QrcodeScanner = new Html5QrcodeScanner(
@@ -86,4 +104,8 @@
         /* verbose= */ false);
     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 </script>
+<<<<<<< HEAD
 {% endblock %}
+=======
+{% endblock %}
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510

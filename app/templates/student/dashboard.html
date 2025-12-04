@@ -30,7 +30,11 @@
         <!-- Scan Button -->
         <div class="mb-8 flex justify-center">
             <a href="{{ url_for('student.scan_qr') }}"
+<<<<<<< HEAD
                 class="flex items-center space-x-3 bg-gradient-to-r from-accent to-highlight hover:from-highlight hover:to-accent text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 text-xl">
+=======
+                class="flex items-center space-x-3 bg-accent hover:bg-highlight text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 text-xl">
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
@@ -41,40 +45,67 @@
         </div>
 
         <div class="mb-6 flex justify-between items-center">
+<<<<<<< HEAD
             <h2 class="text-3xl font-bold text-primary">Mes Cours & Assiduité</h2>
             <a href="{{ url_for('student.view_subjects') }}" class="text-primary hover:text-secondary font-semibold">
                 Voir toutes mes matières →
+=======
+            <h2 class="text-2xl font-bold text-primary mb-2">Mes Cours & Assiduité</h2>
+            <a href="{{ url_for('student.view_subjects') }}" class="text-primary hover:text-secondary font-semibold">
+                Voir tous les détails →
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
             </a>
         </div>
 
         {% if subject_stats %}
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+<<<<<<< HEAD
             {% for item in subject_stats %}
             <a href="{{ url_for('student.subject_history', subject_id=item.subject.id) }}"
                 class="bg-white rounded-xl shadow-lg overflow-hidden border-t-4 {% if item.stats.status == 'Rattrapage' %}border-red-500{% else %}border-green-500{% endif %} hover:shadow-2xl transition-shadow">
+=======
+            {% for stat in subject_stats %}
+            <div
+                class="bg-white rounded-xl shadow-lg overflow-hidden border-t-4 {% if stat.stats.status == 'Rattrapage' %}border-red-500{% else %}border-green-500{% endif %}">
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-lg font-bold text-gray-900">{{ item.subject.name }}</h3>
                         <span
+<<<<<<< HEAD
                             class="px-3 py-1 text-xs font-semibold rounded-full {% if item.stats.status == 'Rattrapage' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
                             {{ item.stats.status }}
+=======
+                            class="px-2 py-1 text-xs font-semibold rounded-full {% if stat.stats.status == 'Rattrapage' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ stat.stats.status }}
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                         </span>
                     </div>
 
                     <div class="space-y-4">
                         <div>
                             <div class="flex justify-between text-sm text-gray-600 mb-1">
+<<<<<<< HEAD
                                 <span>Taux de présence</span>
                                 <span class="font-bold">{{ item.stats.absence_percentage }}% d'absence</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2.5">
                                 <div class="{% if item.stats.absence_percentage >= 25 %}bg-red-500{% else %}bg-green-500{% endif %} h-2.5 rounded-full"
                                     style="width: {{ 100 - item.stats.absence_percentage }}%"></div>
+=======
+                                <span>Présence</span>
+                                <span class="font-bold">{{ stat.stats.absence_percentage }}% Absence</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-accent h-2.5 rounded-full"
+                                    style="width:  {100 - stat.stats.absence_percentage} %"></div>
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 gap-2 text-center text-sm">
                             <div class="bg-gray-50 p-2 rounded">
+<<<<<<< HEAD
                                 <span class="block font-bold text-gray-900">{{ item.stats.total_sessions }}</span>
                                 <span class="text-xs text-gray-500">Réalisées</span>
                             </div>
@@ -84,16 +115,36 @@
                             </div>
                             <div class="bg-red-50 p-2 rounded">
                                 <span class="block font-bold text-red-700">{{ item.stats.absent_count }}</span>
+=======
+                                <span class="block font-bold text-gray-900">{{ stat.stats.total_sessions }}</span>
+                                <span class="text-xs text-gray-500">Total</span>
+                            </div>
+                            <div class="bg-green-50 p-2 rounded">
+                                <span class="block font-bold text-green-700">{{ stat.stats.present_count }}</span>
+                                <span class="text-xs text-green-600">Présent</span>
+                            </div>
+                            <div class="bg-red-50 p-2 rounded">
+                                <span class="block font-bold text-red-700">{{ stat.stats.absent_count }}</span>
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                                 <span class="text-xs text-red-600">Absent</span>
                             </div>
                         </div>
 
+<<<<<<< HEAD
                         {% if item.stats.remaining_sessions > 0 %}
                         <div class="text-center text-sm text-gray-600 bg-blue-50 p-2 rounded">
                             <span class="font-semibold">{{ item.stats.remaining_sessions }}</span> session(s)
                             restante(s)
                         </div>
                         {% endif %}
+=======
+                        <div class="mt-4">
+                            <a href="{{ url_for('student.subject_history', subject_id=stat.subject.id) }}"
+                                class="text-sm text-primary hover:text-secondary font-semibold">
+                                Voir l'historique →
+                            </a>
+                        </div>
+>>>>>>> 65c5b19807ab79184ca8ef0cdd06ba631656f510
                     </div>
                 </div>
             </a>

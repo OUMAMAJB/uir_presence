@@ -121,16 +121,25 @@ def view_subjects():
     
     subjects = current_user.enrolled_subjects
     
-    subject_stats = []
+    # Grouper par semestre
+    subjects_by_semester = {}
     
     for subject in subjects:
         stats = calculate_subject_stats(subject.id, current_user.id)
-        subject_stats.append({
+        semester_name = subject.semester.name
+        
+        if semester_name not in subjects_by_semester:
+            subjects_by_semester[semester_name] = []
+            
+        subjects_by_semester[semester_name].append({
             'subject': subject,
             'stats': stats
         })
     
-    return render_template('student/subjects.html', subject_stats=subject_stats)
+    # Trier les semestres (optionnel, selon la logique de nommage)
+    sorted_semesters = sorted(subjects_by_semester.items())
+    
+    return render_template('student/subjects.html', subjects_by_semester=sorted_semesters)
 
 @student_bp.route('/subject/<int:subject_id>/history')
 @student_required

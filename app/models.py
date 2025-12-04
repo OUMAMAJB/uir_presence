@@ -38,6 +38,63 @@ class User(UserMixin, db.Model):
     
     def __repr__(self):
         return f'<User {self.email}>'
+    
+    # ========== ROLE HELPER PROPERTIES (Dynamic Role System) ==========
+    
+    @property
+    def is_super_admin(self):
+        """Check if user is Super Admin"""
+        return self.role.name in ['admin', 'super_admin']
+    
+    @property
+    def is_teacher(self):
+        """Check if user has teacher capabilities (includes all staff roles)"""
+        return self.role.name in ['admin', 'super_admin', 'admin_dept', 'admin_filiere', 'enseignant']
+    
+    @property
+    def is_student(self):
+        """Check if user is a student"""
+        return self.role.name == 'etudiant'
+    
+    @property
+    def is_dept_head(self):
+        """Check if user is head of any department (additive role)"""
+        from app.models import Department
+        return Department.query.filter_by(head_id=self.id).first() is not None
+    
+    @property
+    def is_track_head(self):
+        """Check if user is head of any track/filière (additive role)"""
+        from app.models import Track
+        return Track.query.filter_by(head_id=self.id).first() is not None
+    
+    @property
+    def managed_departments(self):
+        """Get list of departments this user manages"""
+        from app.models import Department
+        return Department.query.filter_by(head_id=self.id).all()
+    
+    @property
+    def managed_tracks(self):
+        """Get list of tracks/filières this user manages"""
+        from app.models import Track
+        return Track.query.filter_by(head_id=self.id).all()
+    
+    @property
+    def dashboard_tabs(self):
+        """Get list of dashboard tabs available to this user"""
+        tabs = []
+        
+        if self.is_teacher:
+            tabs.append({'id': 'courses', 'name': 'Mes Cours', 'icon': 'book'})
+        
+        if self.is_dept_head or self.is_super_admin:
+            tabs.append({'id': 'department', 'name': 'Gestion Département', 'icon': 'building'})
+        
+        if self.is_track_head:
+            tabs.append({'id': 'track', 'name': 'Gestion Filière', 'icon': 'users'})
+        
+        return tabs
 
 class Department(db.Model):
     __tablename__ = 'departments'

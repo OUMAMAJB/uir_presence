@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier la Filière - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-primary to-secondary shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('admin.dashboard') }}" class="text-2xl font-bold text-white">UIR Presence</a>
+                    <span class="ml-4 px-3 py-1 bg-white text-primary text-sm font-semibold rounded-full">Super
+                        Admin</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-white">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="bg-white text-primary px-4 py-2 rounded-lg hover:bg-light transition">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-primary">Modifier la Filière</h2>
+            <p class="text-gray-600">Mettez à jour les informations de la filière</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-4 p-4 rounded-lg border-l-4 {% if category == 'danger' or category == 'error' %}bg-red-50 border-red-500 text-red-700{% elif category == 'warning' %}bg-yellow-50 border-yellow-500 text-yellow-700{% else %}bg-green-50 border-green-500 text-green-700{% endif %}">
+            <p class="font-medium">{{ message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Formulaire -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-800 px-6 py-4">
+                <h3 class="text-xl font-bold text-white">{{ track.name }}</h3>
+                <p class="text-purple-200 text-sm">Département actuel: {{ track.department.name }}</p>
+            </div>
+            <div class="p-6">
+                <form method="POST" class="space-y-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nom de la filière <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="name" name="name" value="{{ track.name }}" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            placeholder="Ex: Génie Informatique">
+                    </div>
+
+                    <div>
+                        <label for="department_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            Département <span class="text-red-500">*</span>
+                        </label>
+                        <select id="department_id" name="department_id" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                            <option value="">Sélectionner un département</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if track.department_id==dept.id %}selected{% endif %}>
+                                {{ dept.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <p class="mt-1 text-xs text-gray-500">
+                            ⚠️ Changer le département peut affecter les enseignants assignés à cette filière
+                        </p>
+                    </div>
+
+                    <!-- Informations actuelles -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 class="font-medium text-gray-800 mb-3">Informations actuelles</h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Matières:</span>
+                                <span class="font-medium text-green-600">{{ track.subjects|length }}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Étudiants:</span>
+                                <span class="font-medium text-blue-600">{{ track.students|length }}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Chef de filière:</span>
+                                {% if track.head %}
+                                <span class="font-medium text-purple-600">{{ track.head.first_name }} {{
+                                    track.head.last_name }}</span>
+                                {% else %}
+                                <span class="text-gray-400 italic">Non assigné</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <a href="{{ url_for('admin.view_tracks') }}"
+                            class="inline-flex items-center px-4 py-2 text-gray-700 hover:text-gray-900 transition">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Annuler
+                        </a>
+                        <button type="submit"
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

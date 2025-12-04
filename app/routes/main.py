@@ -6,14 +6,13 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 @login_required
 def index():
-    if current_user.role.name == 'admin':
-        return redirect(url_for('admin.dashboard'))
-    elif current_user.role.name == 'admin_dept':
-        return redirect(url_for('department.dashboard'))
-    elif current_user.role.name == 'admin_filiere':
-        return redirect(url_for('track.dashboard'))
-    elif current_user.role.name == 'enseignant':
-        return redirect(url_for('teacher.dashboard'))
-    elif current_user.role.name == 'etudiant':
-        return redirect(url_for('student.dashboard'))
-    return "Unknown Role"
+    from app.decorators import get_dashboard_for_role
+    
+    # Get the dashboard route for the user's role
+    dashboard_route = get_dashboard_for_role(current_user)
+    
+    # If no valid dashboard is found, show debug info
+    if dashboard_route == 'main.index':
+        return f"Unknown Role: '{current_user.role.name}'. User: {current_user.email}"
+    
+    return redirect(url_for(dashboard_route))

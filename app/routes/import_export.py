@@ -11,7 +11,7 @@ import_bp = Blueprint('import', __name__)
 
 def admin_required(func):
     def wrapper(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role.name != 'admin':
+        if not current_user.is_authenticated or current_user.role.name not in ['admin', 'super_admin']:
             flash('Access denied.')
             return redirect(url_for('auth.login'))
         return func(*args, **kwargs)

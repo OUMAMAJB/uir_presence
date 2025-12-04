@@ -10,7 +10,7 @@ def login():
     if current_user.is_authenticated:
         # Rediriger vers le dashboard approprié selon le rôle
         from app.decorators import get_dashboard_for_role
-        dashboard = get_dashboard_for_role(current_user.role.name)
+        dashboard = get_dashboard_for_role(current_user)
         return redirect(url_for(dashboard))
     
     if request.method == 'POST':
@@ -23,7 +23,7 @@ def login():
             
             # Rediriger vers le dashboard approprié selon le rôle
             from app.decorators import get_dashboard_for_role
-            dashboard = get_dashboard_for_role(user.role.name)
+            dashboard = get_dashboard_for_role(user)
             
             next_page = request.args.get('next')
             return redirect(next_page or url_for(dashboard))

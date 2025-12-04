@@ -54,6 +54,88 @@ def dashboard():
 
 # ========== GESTION DE LA STRUCTURE ACADÉMIQUE ==========
 
+# Routes for unified dashboard navigation
+@track_bp.route('/academic-structure')
+@track_admin_required
+def academic_structure():
+    """Gestion des années et semestres (pour le dashboard unifié)"""
+    
+    if current_user.is_super_admin:
+        tracks = Track.query.all()
+        track = tracks[0] if tracks else None
+    elif current_user.is_dept_head:
+        from app.models import Department
+        dept = Department.query.filter_by(head_id=current_user.id).first()
+        tracks = Track.query.filter_by(department_id=dept.id).all() if dept else []
+        track = tracks[0] if tracks else None
+    else:
+        track = Track.query.filter_by(head_id=current_user.id).first()
+        tracks = [track] if track else []
+    
+    if not track:
+        flash('Aucune filière assignée.', 'warning')
+        return redirect(url_for('teacher.dashboard'))
+    
+    academic_years = AcademicYear.query.all()
+    semesters = Semester.query.all()
+    
+    return render_template('track/academic_structure.html', 
+                         track=track, 
+                         tracks=tracks, 
+                         academic_years=academic_years, 
+                         semesters=semesters)
+
+@track_bp.route('/subjects')
+@track_admin_required
+def subjects():
+    """Gestion des matières (alias pour le dashboard unifié)"""
+    return redirect(url_for('track.manage_subjects'))
+
+@track_bp.route('/teaching-assignments')
+@track_admin_required
+def teaching_assignments():
+    """Affectation des matières aux enseignants (pour le dashboard unifié)"""
+    
+    if current_user.is_super_admin:
+        tracks = Track.query.all()
+        track = tracks[0] if tracks else None
+    elif current_user.is_dept_head:
+        from app.models import Department
+        dept = Department.query.filter_by(head_id=current_user.id).first()
+        tracks = Track.query.filter_by(department_id=dept.id).all() if dept else []
+        track = tracks[0] if tracks else None
+    else:
+        track = Track.query.filter_by(head_id=current_user.id).first()
+        tracks = [track] if track else []
+    
+    if not track:
+        flash('Aucune filière assignée.', 'warning')
+        return redirect(url_for('teacher.dashboard'))
+    
+    subjects = Subject.query.filter_by(track_id=track.id).all()
+    
+    # Get teachers from the same department
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    
+    teachers = User.query.filter(
+        User.department_id == track.department_id,
+        User.role_id.in_([teacher_role.id, admin_filiere_role.id])
+    ).all()
+    
+    return render_template('track/teaching_assignments.html', 
+                         track=track, 
+                         tracks=tracks, 
+                         subjects=subjects, 
+                         teachers=teachers)
+
+@track_bp.route('/students')
+@track_admin_required
+def students():
+    """Liste des étudiants (alias pour le dashboard unifié)"""
+    return redirect(url_for('track.view_students'))
+
+
 @track_bp.route('/year/create', methods=['GET', 'POST'])
 @track_admin_required
 def create_academic_year():

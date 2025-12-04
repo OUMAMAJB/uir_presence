@@ -37,6 +37,56 @@ def create_department():
             return redirect(url_for('admin.dashboard'))
     return render_template('admin/create_department.html')
 
+@admin_bp.route('/department/<int:dept_id>/edit', methods=['GET', 'POST'])
+@super_admin_required
+def edit_department(dept_id):
+    """Modifier un département"""
+    department = Department.query.get_or_404(dept_id)
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        
+        # Vérifier si le nom existe déjà (sauf pour ce département)
+        existing = Department.query.filter_by(name=name).filter(Department.id != dept_id).first()
+        if existing:
+            flash('Un département avec ce nom existe déjà.', 'warning')
+            return redirect(request.url)
+        
+        department.name = name
+        db.session.commit()
+        flash(f'Département "{name}" modifié avec succès.', 'success')
+        return redirect(url_for('admin.dashboard'))
+    
+    return render_template('admin/edit_department.html', department=department)
+
+@admin_bp.route('/department/<int:dept_id>/delete', methods=['POST'])
+@super_admin_required
+def delete_department(dept_id):
+    """Supprimer un département"""
+    from app.models import Track
+    
+    department = Department.query.get_or_404(dept_id)
+    
+    # Vérifier s'il y a des filières
+    tracks_count = Track.query.filter_by(department_id=dept_id).count()
+    if tracks_count > 0:
+        flash(f'Impossible de supprimer le département. {tracks_count} filière(s) y sont associées.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+    
+    # Vérifier s'il y a des enseignants
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    teachers_count = User.query.filter_by(department_id=dept_id, role_id=teacher_role.id).count() if teacher_role else 0
+    if teachers_count > 0:
+        flash(f'Impossible de supprimer le département. {teachers_count} enseignant(s) y sont assignés.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+    
+    dept_name = department.name
+    db.session.delete(department)
+    db.session.commit()
+    
+    flash(f'Département "{dept_name}" supprimé avec succès.', 'success')
+    return redirect(url_for('admin.dashboard'))
+
 @admin_bp.route('/department/<int:dept_id>/assign-head', methods=['POST'])
 @super_admin_required
 def assign_department_head(dept_id):
@@ -216,9 +266,326 @@ def create_track():
         db.session.commit()
         
         flash(f'Filière "{name}" créée avec succès dans {department.name}.')
-        return redirect(url_for('admin.dashboard'))
+        return redirect(url_for('admin.view_tracks'))
         
     return render_template('admin/create_track.html', departments=departments)
+
+# ========== GESTION DES FILIÈRES ==========
+
+@admin_bp.route('/tracks')
+@super_admin_required
+def view_tracks():
+    """Consulter toutes les filières avec filtres"""
+    from app.models import Track
+    
+    # Récupérer les paramètres de filtre
+    department_id = request.args.get('department_id', type=int)
+    
+    # Construire la requête de base
+    query = Track.query
+    
+    # Appliquer les filtres
+    if department_id:
+        query = query.filter_by(department_id=department_id)
+    
+    tracks = query.all()
+    
+    # Données pour les filtres
+    departments = Department.query.all()
+    
+    # Récupérer les enseignants par département pour l'assignation des chefs de filière
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    
+    teachers_by_dept = {}
+    if teacher_role or admin_filiere_role:
+        role_ids = [r.id for r in [teacher_role, admin_filiere_role] if r]
+        for dept in departments:
+            teachers = User.query.filter(
+                User.department_id == dept.id,
+                User.role_id.in_(role_ids)
+            ).all()
+            teachers_by_dept[dept.id] = teachers
+    
+    return render_template('admin/view_tracks.html', 
+                         tracks=tracks,
+                         departments=departments,
+                         selected_dept=department_id,
+                         teachers_by_dept=teachers_by_dept)
+
+@admin_bp.route('/track/<int:track_id>/edit', methods=['GET', 'POST'])
+@super_admin_required
+def edit_track(track_id):
+    """Modifier une filière"""
+    from app.models import Track
+    
+    track = Track.query.get_or_404(track_id)
+    departments = Department.query.all()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        department_id = request.form.get('department_id')
+        
+        if not name or not department_id:
+            flash('Nom et département sont requis.', 'warning')
+            return redirect(request.url)
+        
+        # Vérifier si le nom existe déjà dans ce département (sauf pour cette filière)
+        existing = Track.query.filter_by(name=name, department_id=department_id).filter(Track.id != track_id).first()
+        if existing:
+            flash(f'Une filière avec ce nom existe déjà dans ce département.', 'warning')
+            return redirect(request.url)
+        
+        track.name = name
+        track.department_id = department_id
+        db.session.commit()
+        flash(f'Filière "{name}" modifiée avec succès.', 'success')
+        return redirect(url_for('admin.view_tracks'))
+    
+    return render_template('admin/edit_track.html', track=track, departments=departments)
+
+@admin_bp.route('/track/<int:track_id>/delete', methods=['POST'])
+@super_admin_required
+def delete_track(track_id):
+    """Supprimer une filière"""
+    from app.models import Track, Subject
+    
+    track = Track.query.get_or_404(track_id)
+    
+    # Vérifier s'il y a des matières associées
+    subjects_count = Subject.query.filter_by(track_id=track_id).count()
+    if subjects_count > 0:
+        flash(f'Impossible de supprimer la filière. {subjects_count} matière(s) y sont associées.', 'danger')
+        return redirect(url_for('admin.view_tracks'))
+    
+    # Vérifier s'il y a des étudiants inscrits
+    student_role = Role.query.filter_by(name='etudiant').first()
+    students_count = User.query.filter_by(track_id=track_id, role_id=student_role.id).count() if student_role else 0
+    if students_count > 0:
+        flash(f'Impossible de supprimer la filière. {students_count} étudiant(s) y sont inscrits.', 'danger')
+        return redirect(url_for('admin.view_tracks'))
+    
+    # Vérifier si la filière a un chef
+    if track.head_id:
+        # Rétrograder le chef au rôle enseignant
+        old_head = User.query.get(track.head_id)
+        if old_head:
+            teacher_role = Role.query.filter_by(name='enseignant').first()
+            if teacher_role:
+                old_head.role = teacher_role
+    
+    track_name = track.name
+    dept_name = track.department.name
+    db.session.delete(track)
+    db.session.commit()
+    
+    flash(f'Filière "{track_name}" du département {dept_name} supprimée avec succès.', 'success')
+    return redirect(url_for('admin.view_tracks'))
+
+@admin_bp.route('/track/<int:track_id>/assign-head', methods=['POST'])
+@super_admin_required
+def assign_track_head(track_id):
+    """Assigner un chef de filière"""
+    from app.models import Track
+    
+    track = Track.query.get_or_404(track_id)
+    teacher_id = request.form.get('teacher_id')
+    
+    if not teacher_id:
+        # Retirer le chef actuel
+        if track.head_id:
+            old_head = User.query.get(track.head_id)
+            if old_head:
+                # Vérifier s'il est encore chef d'autres filières
+                other_tracks = Track.query.filter(Track.head_id == old_head.id, Track.id != track_id).count()
+                if other_tracks == 0 and old_head.role.name == 'admin_filiere':
+                    teacher_role = Role.query.filter_by(name='enseignant').first()
+                    if teacher_role:
+                        old_head.role = teacher_role
+            track.head_id = None
+            db.session.commit()
+            flash(f'Chef de la filière {track.name} retiré.', 'success')
+        return redirect(url_for('admin.view_tracks'))
+    
+    new_head = User.query.get(teacher_id)
+    
+    if not new_head:
+        flash('Enseignant introuvable.', 'danger')
+        return redirect(url_for('admin.view_tracks'))
+    
+    # Vérifier que l'enseignant appartient au département de la filière
+    if new_head.department_id != track.department_id:
+        flash('L\'enseignant doit appartenir au même département que la filière.', 'danger')
+        return redirect(url_for('admin.view_tracks'))
+    
+    # Gérer l'ancien chef
+    if track.head_id and track.head_id != new_head.id:
+        old_head = User.query.get(track.head_id)
+        if old_head:
+            # Vérifier s'il est encore chef d'autres filières
+            other_tracks = Track.query.filter(Track.head_id == old_head.id, Track.id != track_id).count()
+            if other_tracks == 0 and old_head.role.name == 'admin_filiere':
+                teacher_role = Role.query.filter_by(name='enseignant').first()
+                if teacher_role:
+                    old_head.role = teacher_role
+    
+    # Assigner le nouveau chef
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    if not admin_filiere_role:
+        flash('Rôle admin_filiere introuvable.', 'danger')
+        return redirect(url_for('admin.view_tracks'))
+    
+    new_head.role = admin_filiere_role
+    track.head_id = new_head.id
+    
+    db.session.commit()
+    flash(f'{new_head.first_name} {new_head.last_name} est maintenant chef de la filière {track.name}.', 'success')
+    
+    return redirect(url_for('admin.view_tracks'))
+
+# ========== STRUCTURE ACADÉMIQUE (ANNÉES & SEMESTRES) ==========
+
+@admin_bp.route('/academic-structure')
+@super_admin_required
+def view_academic_structure():
+    """Vue d'ensemble de la structure académique"""
+    from app.models import AcademicYear, Semester
+    
+    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+    return render_template('admin/academic_structure.html', years=years)
+
+@admin_bp.route('/academic-year/create', methods=['POST'])
+@super_admin_required
+def create_academic_year():
+    from app.models import AcademicYear
+    
+    name = request.form.get('name')
+    if not name:
+        flash('Le nom de l\'année est requis.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    if AcademicYear.query.filter_by(name=name).first():
+        flash('Cette année académique existe déjà.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    year = AcademicYear(name=name)
+    db.session.add(year)
+    db.session.commit()
+    
+    flash(f'Année académique "{name}" créée avec succès.', 'success')
+    return redirect(url_for('admin.view_academic_structure'))
+
+@admin_bp.route('/academic-year/<int:year_id>/edit', methods=['POST'])
+@super_admin_required
+def edit_academic_year(year_id):
+    from app.models import AcademicYear
+    
+    year = AcademicYear.query.get_or_404(year_id)
+    name = request.form.get('name')
+    
+    if not name:
+        flash('Le nom est requis.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    existing = AcademicYear.query.filter_by(name=name).filter(AcademicYear.id != year_id).first()
+    if existing:
+        flash('Une autre année porte déjà ce nom.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    year.name = name
+    db.session.commit()
+    
+    flash('Année académique modifiée avec succès.', 'success')
+    return redirect(url_for('admin.view_academic_structure'))
+
+@admin_bp.route('/academic-year/<int:year_id>/delete', methods=['POST'])
+@super_admin_required
+def delete_academic_year(year_id):
+    from app.models import AcademicYear, Semester
+    
+    year = AcademicYear.query.get_or_404(year_id)
+    
+    # Vérifier s'il y a des semestres
+    if year.semesters:
+        flash(f'Impossible de supprimer. Cette année contient {len(year.semesters)} semestre(s).', 'danger')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    db.session.delete(year)
+    db.session.commit()
+    
+    flash('Année académique supprimée avec succès.', 'success')
+    return redirect(url_for('admin.view_academic_structure'))
+
+@admin_bp.route('/semester/create', methods=['POST'])
+@super_admin_required
+def create_semester():
+    from app.models import Semester, AcademicYear
+    
+    name = request.form.get('name')
+    year_id = request.form.get('year_id')
+    
+    if not name or not year_id:
+        flash('Nom et année académique requis.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    year = AcademicYear.query.get(year_id)
+    if not year:
+        flash('Année académique introuvable.', 'danger')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    # Vérifier unicité dans l'année
+    if Semester.query.filter_by(name=name, academic_year_id=year_id).first():
+        flash(f'Le semestre "{name}" existe déjà pour l\'année {year.name}.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    semester = Semester(name=name, academic_year_id=year_id)
+    db.session.add(semester)
+    db.session.commit()
+    
+    flash(f'Semestre "{name}" ajouté à l\'année {year.name}.', 'success')
+    return redirect(url_for('admin.view_academic_structure'))
+
+@admin_bp.route('/semester/<int:semester_id>/edit', methods=['POST'])
+@super_admin_required
+def edit_semester(semester_id):
+    from app.models import Semester
+    
+    semester = Semester.query.get_or_404(semester_id)
+    name = request.form.get('name')
+    
+    if not name:
+        flash('Le nom est requis.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    existing = Semester.query.filter_by(name=name, academic_year_id=semester.academic_year_id).filter(Semester.id != semester_id).first()
+    if existing:
+        flash('Un semestre avec ce nom existe déjà dans cette année.', 'warning')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    semester.name = name
+    db.session.commit()
+    
+    flash('Semestre modifié avec succès.', 'success')
+    return redirect(url_for('admin.view_academic_structure'))
+
+@admin_bp.route('/semester/<int:semester_id>/delete', methods=['POST'])
+@super_admin_required
+def delete_semester(semester_id):
+    from app.models import Semester, Subject
+    
+    semester = Semester.query.get_or_404(semester_id)
+    
+    # Vérifier s'il y a des matières
+    subjects_count = Subject.query.filter_by(semester_id=semester_id).count()
+    if subjects_count > 0:
+        flash(f'Impossible de supprimer. {subjects_count} matière(s) sont associées à ce semestre.', 'danger')
+        return redirect(url_for('admin.view_academic_structure'))
+        
+    db.session.delete(semester)
+    db.session.commit()
+    
+    flash('Semestre supprimé avec succès.', 'success')
+    return redirect(url_for('admin.view_academic_structure'))
 
 @admin_bp.route('/subject/create', methods=['GET', 'POST'])
 @super_admin_required
@@ -259,9 +626,124 @@ def create_subject():
         db.session.commit()
         
         flash(f'Matière "{name}" créée avec succès dans la filière {track.name}.')
-        return redirect(url_for('admin.dashboard'))
+        return redirect(url_for('admin.view_subjects'))
         
     return render_template('admin/create_subject.html', departments=departments, tracks=tracks, semesters=semesters)
+
+@admin_bp.route('/subjects')
+@super_admin_required
+def view_subjects():
+    """Consulter toutes les matières avec filtres"""
+    from app.models import Subject, Track, Semester, AcademicYear
+    
+    # Filtres
+    track_id = request.args.get('track_id', type=int)
+    semester_id = request.args.get('semester_id', type=int)
+    
+    query = Subject.query
+    
+    if track_id:
+        query = query.filter_by(track_id=track_id)
+    if semester_id:
+        query = query.filter_by(semester_id=semester_id)
+        
+    subjects = query.all()
+    
+    # Données pour les filtres
+    tracks = Track.query.all()
+    semesters = Semester.query.join(AcademicYear).order_by(AcademicYear.name.desc(), Semester.name).all()
+    
+    return render_template('admin/view_subjects.html', 
+                         subjects=subjects,
+                         tracks=tracks,
+                         semesters=semesters,
+                         selected_track=track_id,
+                         selected_semester=semester_id)
+
+@admin_bp.route('/subject/<int:subject_id>/edit', methods=['GET', 'POST'])
+@super_admin_required
+def edit_subject(subject_id):
+    from app.models import Subject, Track, Semester
+    
+    subject = Subject.query.get_or_404(subject_id)
+    tracks = Track.query.all()
+    semesters = Semester.query.all()
+    
+    if request.method == 'POST':
+        subject.name = request.form.get('name')
+        subject.track_id = request.form.get('track_id')
+        subject.semester_id = request.form.get('semester_id')
+        subject.total_sessions_cm = int(request.form.get('total_sessions_cm', 0))
+        subject.total_sessions_td = int(request.form.get('total_sessions_td', 0))
+        subject.total_sessions_tp = int(request.form.get('total_sessions_tp', 0))
+        
+        db.session.commit()
+        flash(f'Matière "{subject.name}" modifiée avec succès.', 'success')
+        return redirect(url_for('admin.view_subjects'))
+        
+    return render_template('admin/edit_subject.html', subject=subject, tracks=tracks, semesters=semesters)
+
+@admin_bp.route('/subject/<int:subject_id>/delete', methods=['POST'])
+@super_admin_required
+def delete_subject(subject_id):
+    from app.models import Subject
+    
+    subject = Subject.query.get_or_404(subject_id)
+    name = subject.name
+    db.session.delete(subject)
+    db.session.commit()
+    
+    flash(f'Matière "{name}" supprimée avec succès.', 'success')
+    return redirect(url_for('admin.view_subjects'))
+
+@admin_bp.route('/subject/<int:subject_id>/assign-teachers', methods=['GET', 'POST'])
+@super_admin_required
+def assign_subject_teachers(subject_id):
+    """Assigner des enseignants à une matière"""
+    from app.models import Subject, TeachingAssignment
+    
+    subject = Subject.query.get_or_404(subject_id)
+    
+    # Récupérer tous les enseignants éligibles (rôle enseignant, admin_dept, admin_filiere)
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    admin_dept_role = Role.query.filter_by(name='admin_dept').first()
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    
+    role_ids = [r.id for r in [teacher_role, admin_dept_role, admin_filiere_role] if r]
+    
+    # Filtrer par département de la filière si possible, sinon tous
+    # Idéalement, on montre d'abord ceux du département
+    department_id = subject.track.department_id
+    
+    teachers = User.query.filter(User.role_id.in_(role_ids)).order_by(
+        (User.department_id == department_id).desc(), # Ceux du département en premier
+        User.last_name
+    ).all()
+    
+    if request.method == 'POST':
+        # Récupérer les IDs des enseignants sélectionnés
+        selected_teacher_ids = request.form.getlist('teacher_ids')
+        selected_teacher_ids = [int(id) for id in selected_teacher_ids]
+        
+        # Mettre à jour les assignations
+        # On supprime tout et on recrée (approche simple)
+        TeachingAssignment.query.filter_by(subject_id=subject_id).delete()
+        
+        for teacher_id in selected_teacher_ids:
+            assignment = TeachingAssignment(subject_id=subject_id, teacher_id=teacher_id)
+            db.session.add(assignment)
+            
+        db.session.commit()
+        flash('Affectation des enseignants mise à jour.', 'success')
+        return redirect(url_for('admin.view_subjects'))
+        
+    # Récupérer les enseignants déjà assignés
+    assigned_teacher_ids = [t.id for t in subject.teachers]
+    
+    return render_template('admin/assign_subject_teachers.html', 
+                         subject=subject, 
+                         teachers=teachers, 
+                         assigned_teacher_ids=assigned_teacher_ids)
 
 @admin_bp.route('/students')
 @super_admin_required
@@ -307,3 +789,157 @@ def view_students():
                          selected_dept=department_id,
                          selected_track=track_id,
                          selected_year=year_id)
+
+# ========== GESTION DES ENSEIGNANTS ==========
+
+@admin_bp.route('/teachers')
+@super_admin_required
+def view_teachers():
+    """Consulter tous les enseignants avec filtres"""
+    from app.models import Track
+    
+    # Récupérer les paramètres de filtre
+    department_id = request.args.get('department_id', type=int)
+    
+    # Récupérer les rôles enseignants
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    admin_dept_role = Role.query.filter_by(name='admin_dept').first()
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    
+    role_ids = [r.id for r in [teacher_role, admin_dept_role, admin_filiere_role] if r]
+    
+    # Construire la requête de base
+    query = User.query.filter(User.role_id.in_(role_ids))
+    
+    # Appliquer les filtres
+    if department_id:
+        query = query.filter_by(department_id=department_id)
+    
+    teachers = query.all()
+    
+    # Données pour les filtres
+    departments = Department.query.all()
+    
+    return render_template('admin/view_teachers.html', 
+                         teachers=teachers,
+                         departments=departments,
+                         selected_dept=department_id)
+
+@admin_bp.route('/teacher/<int:teacher_id>/edit', methods=['GET', 'POST'])
+@super_admin_required
+def edit_teacher(teacher_id):
+    """Modifier un enseignant"""
+    teacher = User.query.get_or_404(teacher_id)
+    departments = Department.query.all()
+    
+    if request.method == 'POST':
+        teacher.first_name = request.form.get('first_name')
+        teacher.last_name = request.form.get('last_name')
+        teacher.department_id = request.form.get('department_id')
+        
+        db.session.commit()
+        flash(f'Enseignant modifié avec succès.', 'success')
+        return redirect(url_for('admin.view_teachers'))
+    
+    return render_template('admin/edit_teacher.html', teacher=teacher, departments=departments)
+
+@admin_bp.route('/teacher/<int:teacher_id>/delete', methods=['POST'])
+@super_admin_required
+def delete_teacher(teacher_id):
+    """Supprimer un enseignant"""
+    from app.models import Session, Track
+    
+    teacher = User.query.get_or_404(teacher_id)
+    
+    # Vérifier si l'enseignant est chef de département
+    dept = Department.query.filter_by(head_id=teacher_id).first()
+    if dept:
+        flash(f'Impossible de supprimer. {teacher.first_name} {teacher.last_name} est chef du département {dept.name}.', 'danger')
+        return redirect(url_for('admin.view_teachers'))
+    
+    # Vérifier si l'enseignant est chef de filière
+    track = Track.query.filter_by(head_id=teacher_id).first()
+    if track:
+        flash(f'Impossible de supprimer. {teacher.first_name} {teacher.last_name} est chef de la filière {track.name}.', 'danger')
+        return redirect(url_for('admin.view_teachers'))
+    
+    # Vérifier si l'enseignant a des sessions
+    sessions_count = Session.query.filter_by(teacher_id=teacher_id).count()
+    if sessions_count > 0:
+        flash(f'Impossible de supprimer. {sessions_count} session(s) sont associées à cet enseignant.', 'danger')
+        return redirect(url_for('admin.view_teachers'))
+    
+    teacher_name = f'{teacher.first_name} {teacher.last_name}'
+    db.session.delete(teacher)
+    db.session.commit()
+    
+    flash(f'Enseignant "{teacher_name}" supprimé avec succès.', 'success')
+    return redirect(url_for('admin.view_teachers'))
+
+# ========== STATISTIQUES GLOBALES ==========
+
+@admin_bp.route('/statistics')
+@super_admin_required
+def statistics():
+    """Statistiques globales de l'établissement"""
+    from app.models import Track, Subject, Session, Attendance
+    
+    # Compteurs globaux
+    departments_count = Department.query.count()
+    tracks_count = Track.query.count()
+    subjects_count = Subject.query.count()
+    
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    admin_dept_role = Role.query.filter_by(name='admin_dept').first()
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    role_ids = [r.id for r in [teacher_role, admin_dept_role, admin_filiere_role] if r]
+    teachers_count = User.query.filter(User.role_id.in_(role_ids)).count()
+    
+    student_role = Role.query.filter_by(name='etudiant').first()
+    students_count = User.query.filter_by(role_id=student_role.id).count() if student_role else 0
+    
+    sessions_count = Session.query.count()
+    attendances_count = Attendance.query.count()
+    
+    # Présences vs Absences
+    present_count = Attendance.query.filter_by(status='present').count()
+    absent_count = Attendance.query.filter_by(status='absent').count()
+    
+    # Statistiques par département
+    departments = Department.query.all()
+    dept_stats = []
+    for dept in departments:
+        tracks = Track.query.filter_by(department_id=dept.id).all()
+        track_ids = [t.id for t in tracks]
+        
+        dept_teachers = User.query.filter(
+            User.department_id == dept.id,
+            User.role_id.in_(role_ids)
+        ).count()
+        
+        dept_students = User.query.filter(
+            User.track_id.in_(track_ids),
+            User.role_id == student_role.id
+        ).count() if student_role and track_ids else 0
+        
+        dept_stats.append({
+            'department': dept,
+            'tracks_count': len(tracks),
+            'teachers_count': dept_teachers,
+            'students_count': dept_students
+        })
+    
+    stats = {
+        'departments_count': departments_count,
+        'tracks_count': tracks_count,
+        'subjects_count': subjects_count,
+        'teachers_count': teachers_count,
+        'students_count': students_count,
+        'sessions_count': sessions_count,
+        'attendances_count': attendances_count,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'dept_stats': dept_stats
+    }
+    
+    return render_template('admin/statistics.html', stats=stats)

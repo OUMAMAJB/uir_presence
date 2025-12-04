@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Matières - UIR Presence{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-gradient-to-r from-primary to-secondary shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('admin.dashboard') }}" class="text-2xl font-bold text-white">UIR Presence</a>
+                    <span class="ml-4 px-3 py-1 bg-white text-primary text-sm font-semibold rounded-full">Super
+                        Admin</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-white">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                    <a href="{{ url_for('auth.logout') }}"
+                        class="bg-white text-primary px-4 py-2 rounded-lg hover:bg-light transition">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h2 class="text-3xl font-bold text-primary">Gestion des Matières</h2>
+                <p class="text-gray-600">Consulter, modifier et affecter les enseignants</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{{ url_for('admin.create_subject') }}"
+                    class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-accent to-highlight text-white font-semibold rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Nouvelle Matière
+                </a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-4 p-4 rounded-lg border-l-4 {% if category == 'danger' or category == 'error' %}bg-red-50 border-red-500 text-red-700{% elif category == 'warning' %}bg-yellow-50 border-yellow-500 text-yellow-700{% else %}bg-green-50 border-green-500 text-green-700{% endif %}">
+            <p class="font-medium">{{ message }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Filtres -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Filtrer les matières</h3>
+            <form method="GET" class="flex flex-wrap items-end gap-4">
+                <div class="flex-1 min-w-64">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filière</label>
+                    <select name="track_id"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-accent focus:border-accent">
+                        <option value="">Toutes les filières</option>
+                        {% for track in tracks %}
+                        <option value="{{ track.id }}" {% if selected_track==track.id %}selected{% endif %}>{{
+                            track.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1 min-w-64">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <select name="semester_id"
+                        class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-accent focus:border-accent">
+                        <option value="">Tous les semestres</option>
+                        {% for semester in semesters %}
+                        <option value="{{ semester.id }}" {% if selected_semester==semester.id %}selected{% endif %}>
+                            {{ semester.academic_year.name }} - {{ semester.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-secondary transition">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Filtrer
+                    </button>
+                    <a href="{{ url_for('admin.view_subjects') }}"
+                        class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                        Réinitialiser
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Liste des matières -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-green-800 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Liste des Matières</h3>
+                <span class="text-white text-sm bg-white/20 px-3 py-1 rounded-full">{{ subjects|length }}
+                    matière(s)</span>
+            </div>
+            <div class="p-6">
+                {% if subjects %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Matière</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Filière</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Semestre</th>
+                                <th
+                                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Volume (CM/TD/TP)</th>
+                                <th
+                                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Enseignants</th>
+                                <th
+                                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for subject in subjects %}
+                            <tr class="hover:bg-gray-50 transition-colors duration-150">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-bold text-gray-900">{{ subject.name }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                        class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                                        {{ subject.track.name }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm text-gray-600">{{ subject.semester.name }}</span>
+                                    <span class="text-xs text-gray-400 block">{{ subject.semester.academic_year.name
+                                        }}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <div class="text-xs font-medium text-gray-600 space-x-1">
+                                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded" title="CM">{{
+                                            subject.total_sessions_cm }}</span>
+                                        <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded" title="TD">{{
+                                            subject.total_sessions_td }}</span>
+                                        <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded" title="TP">{{
+                                            subject.total_sessions_tp }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <a href="{{ url_for('admin.assign_subject_teachers', subject_id=subject.id) }}"
+                                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {% if subject.teachers %}bg-indigo-100 text-indigo-800 hover:bg-indigo-200{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition">
+                                        {% if subject.teachers %}
+                                        {{ subject.teachers|length }} enseignant(s)
+                                        {% else %}
+                                        + Assigner
+                                        {% endif %}
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <a href="{{ url_for('admin.edit_subject', subject_id=subject.id) }}"
+                                            class="text-blue-600 hover:text-blue-900" title="Modifier">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                </path>
+                                            </svg>
+                                        </a>
+                                        <form action="{{ url_for('admin.delete_subject', subject_id=subject.id) }}"
+                                            method="POST" class="inline"
+                                            onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette matière ?');">
+                                            <button type="submit" class="text-red-600 hover:text-red-900"
+                                                title="Supprimer">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                    </path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                            </path>
+                        </svg>
+                    </div>
+                    <p class="text-gray-500 mb-4">Aucune matière trouvée.</p>
+                    <a href="{{ url_for('admin.create_subject') }}"
+                        class="inline-block bg-gradient-to-r from-accent to-highlight text-white px-6 py-2 rounded-lg hover:shadow-lg transition">
+                        Créer une matière
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="{{ url_for('admin.dashboard') }}" class="text-primary hover:text-secondary">&larr; Retour au
+                dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -29,7 +29,7 @@
 
         <!-- Scan Button -->
         <div class="mb-8 flex justify-center">
-            <a href="{{ url_for('student.scan_page') }}"
+            <a href="{{ url_for('student.scan_qr') }}"
                 class="flex items-center space-x-3 bg-accent hover:bg-highlight text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 text-xl">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -40,21 +40,24 @@
             </a>
         </div>
 
-        <div class="mb-6">
+        <div class="mb-6 flex justify-between items-center">
             <h2 class="text-2xl font-bold text-primary mb-2">Mes Cours & Assiduité</h2>
+            <a href="{{ url_for('student.view_subjects') }}" class="text-primary hover:text-secondary font-semibold">
+                Voir tous les détails →
+            </a>
         </div>
 
         {% if subject_stats %}
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for stat in subject_stats %}
             <div
-                class="bg-white rounded-xl shadow-lg overflow-hidden border-t-4 {% if stat.status == 'Rattrapage' %}border-red-500{% else %}border-green-500{% endif %}">
+                class="bg-white rounded-xl shadow-lg overflow-hidden border-t-4 {% if stat.stats.status == 'Rattrapage' %}border-red-500{% else %}border-green-500{% endif %}">
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-lg font-bold text-gray-900">{{ stat.subject.name }}</h3>
                         <span
-                            class="px-2 py-1 text-xs font-semibold rounded-full {% if stat.status == 'Rattrapage' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
-                            {{ stat.status }}
+                            class="px-2 py-1 text-xs font-semibold rounded-full {% if stat.stats.status == 'Rattrapage' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ stat.stats.status }}
                         </span>
                     </div>
 
@@ -62,27 +65,34 @@
                         <div>
                             <div class="flex justify-between text-sm text-gray-600 mb-1">
                                 <span>Présence</span>
-                                <span class="font-bold">{{ stat.absence_percentage }}% Absence</span>
+                                <span class="font-bold">{{ stat.stats.absence_percentage }}% Absence</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2.5">
                                 <div class="bg-accent h-2.5 rounded-full"
-                                    style="width: {{ 100 - stat.absence_percentage }}%"></div>
+                                    style="width:  {100 - stat.stats.absence_percentage} %"></div>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-3 gap-2 text-center text-sm">
                             <div class="bg-gray-50 p-2 rounded">
-                                <span class="block font-bold text-gray-900">{{ stat.total_sessions }}</span>
+                                <span class="block font-bold text-gray-900">{{ stat.stats.total_sessions }}</span>
                                 <span class="text-xs text-gray-500">Total</span>
                             </div>
                             <div class="bg-green-50 p-2 rounded">
-                                <span class="block font-bold text-green-700">{{ stat.attended }}</span>
+                                <span class="block font-bold text-green-700">{{ stat.stats.present_count }}</span>
                                 <span class="text-xs text-green-600">Présent</span>
                             </div>
                             <div class="bg-red-50 p-2 rounded">
-                                <span class="block font-bold text-red-700">{{ stat.missed }}</span>
+                                <span class="block font-bold text-red-700">{{ stat.stats.absent_count }}</span>
                                 <span class="text-xs text-red-600">Absent</span>
                             </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <a href="{{ url_for('student.subject_history', subject_id=stat.subject.id) }}"
+                                class="text-sm text-primary hover:text-secondary font-semibold">
+                                Voir l'historique →
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -60,6 +60,82 @@ def dashboard():
                          teachers=teachers,
                          students_by_track=students_by_track)
 
+# ========== ROUTES POUR LE DASHBOARD UNIFIÉ ==========
+
+@department_bp.route('/tracks')
+@dept_admin_required
+def tracks():
+    """Liste des filières du département (pour le dashboard unifié)"""
+    
+    if current_user.is_super_admin:
+        departments = Department.query.all()
+        department = departments[0] if departments else None
+    else:
+        department = Department.query.filter_by(head_id=current_user.id).first()
+    
+    if not department:
+        flash('Aucun département assigné.', 'warning')
+        return redirect(url_for('teacher.dashboard'))
+    
+    tracks = Track.query.filter_by(department_id=department.id).all()
+    
+    return render_template('department/tracks.html', department=department, tracks=tracks)
+
+@department_bp.route('/track-heads')
+@dept_admin_required
+def track_heads():
+    """Gestion des chefs de filière (pour le dashboard unifié)"""
+    
+    if current_user.is_super_admin:
+        departments = Department.query.all()
+        department = departments[0] if departments else None
+    else:
+        department = Department.query.filter_by(head_id=current_user.id).first()
+    
+    if not department:
+        flash('Aucun département assigné.', 'warning')
+        return redirect(url_for('teacher.dashboard'))
+    
+    tracks = Track.query.filter_by(department_id=department.id).all()
+    
+    # Get all teachers for potential assignment
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    
+    teachers = User.query.filter(
+        User.department_id == department.id,
+        User.role_id.in_([teacher_role.id, admin_filiere_role.id])
+    ).all()
+    
+    return render_template('department/track_heads.html', department=department, tracks=tracks, teachers=teachers)
+
+@department_bp.route('/assign-teachers')
+@dept_admin_required
+def assign_teachers():
+    """Affectation des enseignants aux filières (pour le dashboard unifié)"""
+    
+    if current_user.is_super_admin:
+        departments = Department.query.all()
+        department = departments[0] if departments else None
+    else:
+        department = Department.query.filter_by(head_id=current_user.id).first()
+    
+    if not department:
+        flash('Aucun département assigné.', 'warning')
+        return redirect(url_for('teacher.dashboard'))
+    
+    tracks = Track.query.filter_by(department_id=department.id).all()
+    
+    teacher_role = Role.query.filter_by(name='enseignant').first()
+    admin_filiere_role = Role.query.filter_by(name='admin_filiere').first()
+    
+    teachers = User.query.filter(
+        User.department_id == department.id,
+        User.role_id.in_([teacher_role.id, admin_filiere_role.id])
+    ).all()
+    
+    return render_template('department/assign_teachers.html', department=department, tracks=tracks, teachers=teachers)
+
 # ========== GESTION DES FILIÈRES ==========
 
 @department_bp.route('/track/create', methods=['GET', 'POST'])

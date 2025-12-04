@@ -2,7 +2,7 @@
 Routes pour le Chef de Filière
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.models import Track, Subject, User, Semester, AcademicYear, Role, Session, Attendance, db, PasswordResetToken
 from app.decorators import track_admin_required, teacher_required
@@ -555,6 +555,7 @@ def manage_subjects():
     
     # Filtres
     semester_id = request.args.get('semester_id', type=int)
+    academic_year = request.args.get('academic_year', type=int)
     
     # Construire la requête des matières
     query = Subject.query.filter_by(track_id=track.id)
@@ -562,14 +563,31 @@ def manage_subjects():
     if semester_id:
         query = query.filter_by(semester_id=semester_id)
     
-    subjects = query.all()
+    # Récupérer toutes les matières avant de filtrer par année
+    all_subjects = query.all()
+    
+    # Filtrer par année (S1/S2 = 1ère année, S3/S4 = 2ème année, etc.)
+    if academic_year:
+        subjects = []
+        for subject in all_subjects:
+            if subject.semester:
+                try:
+                    sem_num = int(subject.semester.name.replace('S', ''))
+                    year_num = (sem_num + 1) // 2
+                    if year_num == academic_year:
+                        subjects.append(subject)
+                except:
+                    pass
+    else:
+        subjects = all_subjects
     
     return render_template('track/manage_subjects.html',
                          subjects=subjects,
                          track=track,
                          tracks=tracks,
                          semesters=semesters,
-                         selected_semester_id=semester_id)
+                         selected_semester_id=semester_id,
+                         selected_academic_year=academic_year)
 
 @track_bp.route('/my-courses')
 @track_admin_required
@@ -712,9 +730,9 @@ def create_session(subject_id):
         except ValueError:
             flash('Format de date ou heure invalide.', 'danger')
     
-    # Récupérer les enseignants de la matière pour le choix
-    teachers = subject.teachers
-    return render_template('track/create_session.html', subject=subject, teachers=teachers)
+    
+    print(f"DEBUG: Rendering create_session template with subject: {subject.name if subject else 'None'}")
+    return render_template('track/create_session.html', subject=subject)
 
 @track_bp.route('/session/<int:session_id>/edit', methods=['GET', 'POST'])
 @track_admin_required
@@ -808,7 +826,7 @@ def session_qr(session_id):
             flash('Accès refusé.', 'danger')
             return redirect(url_for('track.dashboard'))
     
-    return render_template('track/session_qr.html', session=session)
+    return render_template('track/session_qr.html', session=session, subject=session.subject)
 
 @track_bp.route('/session/<int:session_id>/refresh_token', methods=['POST'])
 @track_admin_required

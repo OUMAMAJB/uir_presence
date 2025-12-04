@@ -1,3 +1,9 @@
+from dotenv import load_dotenv
+import os
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
+
 from app import create_app, db
 from app.models import User, Role, Department, Track, Subject, Session, Attendance, PasswordResetToken
 

@@ -21,7 +21,7 @@
                 <p class="text-gray-600">{% if track %}{{ track.name }} - {{ subjects|length }} matière(s){% else
                     %}Filière{% endif %}</p>
             </div>
-            {% if track %}
+            {%if track %}
             <a href="{{ url_for('track.create_subject', track_id=track.id) }}"
                 class="bg-gradient-to-r from-accent to-highlight hover:from-highlight hover:to-accent text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 font-semibold shadow-lg">
                 + Créer Matière
@@ -41,6 +41,19 @@
             <div class="p-6">
                 <form method="GET" class="flex space-x-4">
                     <input type="hidden" name="track_id" value="{{ track.id }}">
+
+                    <!-- Filter by Academic Year -->
+                    <div class="flex-1">
+                        <select name="academic_year"
+                            class="block w-full px-4 py-2 border-gray-300 rounded-lg focus:ring-accent focus:border-accent">
+                            <option value="">Toutes les années</option>
+                            <option value="1" {% if selected_academic_year==1 %}selected{% endif %}>1ère année</option>
+                            <option value="2" {% if selected_academic_year==2 %}selected{% endif %}>2ème année</option>
+                            <option value="3" {% if selected_academic_year==3 %}selected{% endif %}>3ème année</option>
+                            <option value="4" {% if selected_academic_year==4 %}selected{% endif %}>4ème année</option>
+                            <option value="5" {% if selected_academic_year==5 %}selected{% endif %}>5ème année</option>
+                        </select>
+                    </div>
 
                     <!-- Filter by Semester -->
                     <div class="flex-1">
